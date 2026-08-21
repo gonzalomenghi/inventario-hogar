@@ -19,9 +19,9 @@ App web/mobile para:
 - **Lenguaje:** TypeScript en todo el frontend.
 - **Estado/datos:** hooks propios sobre `@supabase/supabase-js` con Realtime, sin librería de estado global por ahora (evaluar React Query si crece la complejidad de cache).
 
-## 3. Fase 1 — Modelado de datos (COMPLETA en Supabase, ⚠️ no versionada en git)
+## 3. Fase 1 — Modelado de datos (COMPLETA)
 
-Ubicación nominal: `supabase/schema_inventario_hogar.sql` — **este archivo todavía no existe en el repo**. El schema se corrió directo en el SQL Editor de Supabase y nunca se guardó como archivo. Pendiente: exportarlo (`npx supabase db dump --schema public -f supabase/schema_inventario_hogar.sql`, corriéndolo vos mismo ya que pide credenciales de conexión) y commitearlo, para no depender solo del dashboard.
+Ubicación: `supabase/migrations/` (formato de migraciones de Supabase CLI, no un dump único). Proyecto linkeado vía `supabase link --project-ref qktpohqtwyvwypgohyda`. El proyecto tiene la integración GitHub↔Supabase activa (Settings → Integrations) con **auto-deploy a producción en merges a `master`** apuntando a esta misma carpeta — cualquier migración nueva que se agregue a `supabase/migrations/` y se mergee a `master` se aplica sola a la base real. Para agregar cambios de schema a futuro: escribir la migración (`supabase migration new nombre`) o seguir usando `supabase db pull` después de iterar en el SQL Editor, revisar el diff generado, y commitear.
 
 ### Tablas
 - **`productos_base`**: catálogo maestro compartido entre usuarios (nombre, `categoria` enum: `alimentos`/`higiene`/`limpieza`, `codigo_barras`, `unidad_medida`). Lectura pública para autenticados, insert abierto a cualquier usuario autenticado (MVP; a futuro considerar moderación).
