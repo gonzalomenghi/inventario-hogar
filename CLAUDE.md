@@ -48,7 +48,8 @@ Todas las tablas de usuario (`inventario_hogar`, `listas_compra`, `detalle_lista
 
 Archivos ya creados (en las carpetas correspondientes del proyecto Expo):
 - `lib/supabase.ts` — cliente único, con `AsyncStorage` para persistir sesión. Credenciales vía `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` en `.env` (ver `.env.example`), nunca hardcodeadas.
-- `types/database.types.ts` — tipos a mano reflejando el schema (reemplazar por `supabase gen types typescript` cuando se use la CLI). Nota: por ser `Database.Tables` un `Record<string, any>` placeholder, `tsc` marca falsos positivos (`SelectQueryError`) en selects con joins (`useInventario.ts`, `ModoSupermercadoScreen.tsx`); se resuelve generando los tipos reales.
+- `types/database.types.ts` — generado con `supabase gen types typescript --project-id qktpohqtwyvwypgohyda`, más alias de conveniencia a mano al final del archivo (`InventarioItem`, `DetalleListaItem`, etc.) que hay que mantener si cambia el schema. Volver a correr el comando después de cualquier migración nueva.
+- `hooks/useAuth.ts` + `screens/AuthScreen.tsx` — login/registro por email y contraseña con Supabase Auth. `src/app/_layout.tsx` gatea toda la app: sin sesión muestra `AuthScreen`, con sesión muestra `AppTabs`. Cerrar sesión está en la tab Historial (temporal, hasta que exista una pantalla de cuenta dedicada).
 - `hooks/useInventario.ts` — fetch de inventario + suscripción Realtime + `ajustarCantidad` con actualización optimista (+/- responde instantáneo en UI, confirma contra DB después, revierte si falla).
 - `screens/InventarioScreen.tsx` — lista agrupada por categoría (`SectionList`), semáforo visual (dot de color), controles +/- por ítem.
 - `screens/ModoSupermercadoScreen.tsx` — checklist en vivo sobre `detalle_lista` de una lista activa; al tildar un ítem, actualiza `comprado = true` (y opcionalmente `precio_unitario`), lo cual dispara `fn_comprar_item_lista` en el backend.
@@ -57,7 +58,7 @@ Archivos ya creados (en las carpetas correspondientes del proyecto Expo):
 ### Pendiente en Fase 2
 - [x] Navegación (bottom tabs: Inventario / Modo Supermercado / Historial) — Expo Router.
 - [x] Variables de entorno: `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` en `.env`.
-- [ ] Pantalla de login/registro con Supabase Auth.
+- [x] Pantalla de login/registro con Supabase Auth (email/contraseña).
 - [ ] Pantalla para dar de alta productos nuevos en `productos_base` + agregarlos a `inventario_hogar` (con búsqueda en el catálogo existente antes de crear uno nuevo, para evitar duplicados).
 - [ ] Creación de una `lista_compra` activa (hoy `src/app/modo-supermercado.tsx` solo busca una existente; si no hay, muestra estado vacío) — antes de que exista la auto-generación de Fase 3.
 
