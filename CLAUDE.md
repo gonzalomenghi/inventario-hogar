@@ -19,9 +19,9 @@ App web/mobile para:
 - **Lenguaje:** TypeScript en todo el frontend.
 - **Estado/datos:** hooks propios sobre `@supabase/supabase-js` con Realtime, sin librería de estado global por ahora (evaluar React Query si crece la complejidad de cache).
 
-## 3. Fase 1 — Modelado de datos (COMPLETA)
+## 3. Fase 1 — Modelado de datos (COMPLETA en Supabase, ⚠️ no versionada en git)
 
-Ubicación: `supabase/schema_inventario_hogar.sql`
+Ubicación nominal: `supabase/schema_inventario_hogar.sql` — **este archivo todavía no existe en el repo**. El schema se corrió directo en el SQL Editor de Supabase y nunca se guardó como archivo. Pendiente: exportarlo (`npx supabase db dump --schema public -f supabase/schema_inventario_hogar.sql`, corriéndolo vos mismo ya que pide credenciales de conexión) y commitearlo, para no depender solo del dashboard.
 
 ### Tablas
 - **`productos_base`**: catálogo maestro compartido entre usuarios (nombre, `categoria` enum: `alimentos`/`higiene`/`limpieza`, `codigo_barras`, `unidad_medida`). Lectura pública para autenticados, insert abierto a cualquier usuario autenticado (MVP; a futuro considerar moderación).
@@ -47,18 +47,19 @@ Todas las tablas de usuario (`inventario_hogar`, `listas_compra`, `detalle_lista
 ## 4. Fase 2 — Frontend (EN CURSO)
 
 Archivos ya creados (en las carpetas correspondientes del proyecto Expo):
-- `lib/supabase.ts` — cliente único, con `AsyncStorage` para persistir sesión.
-- `types/database.types.ts` — tipos a mano reflejando el schema (reemplazar por `supabase gen types typescript` cuando se use la CLI).
+- `lib/supabase.ts` — cliente único, con `AsyncStorage` para persistir sesión. Credenciales vía `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` en `.env` (ver `.env.example`), nunca hardcodeadas.
+- `types/database.types.ts` — tipos a mano reflejando el schema (reemplazar por `supabase gen types typescript` cuando se use la CLI). Nota: por ser `Database.Tables` un `Record<string, any>` placeholder, `tsc` marca falsos positivos (`SelectQueryError`) en selects con joins (`useInventario.ts`, `ModoSupermercadoScreen.tsx`); se resuelve generando los tipos reales.
 - `hooks/useInventario.ts` — fetch de inventario + suscripción Realtime + `ajustarCantidad` con actualización optimista (+/- responde instantáneo en UI, confirma contra DB después, revierte si falla).
 - `screens/InventarioScreen.tsx` — lista agrupada por categoría (`SectionList`), semáforo visual (dot de color), controles +/- por ítem.
 - `screens/ModoSupermercadoScreen.tsx` — checklist en vivo sobre `detalle_lista` de una lista activa; al tildar un ítem, actualiza `comprado = true` (y opcionalmente `precio_unitario`), lo cual dispara `fn_comprar_item_lista` en el backend.
+- Navegación: `src/app/index.tsx` (Inventario), `src/app/modo-supermercado.tsx` (resuelve la `lista_compra` activa del usuario y renderiza `ModoSupermercadoScreen`, o un estado vacío si no hay ninguna), `src/app/historial.tsx` (placeholder, Fase 5). Bottom tabs vía Expo Router (`src/components/app-tabs.tsx` nativo, `app-tabs.web.tsx` para web). `app.json` usa `web.output: "single"` (SPA sin SSR) porque el cliente de Supabase no es SSR-safe (`AsyncStorage` asume `window`, Realtime necesita WebSocket nativo).
 
 ### Pendiente en Fase 2
-- [ ] Navegación (bottom tabs: Inventario / Modo Supermercado / Historial) — evaluar Expo Router vs React Navigation.
+- [x] Navegación (bottom tabs: Inventario / Modo Supermercado / Historial) — Expo Router.
+- [x] Variables de entorno: `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` en `.env`.
 - [ ] Pantalla de login/registro con Supabase Auth.
 - [ ] Pantalla para dar de alta productos nuevos en `productos_base` + agregarlos a `inventario_hogar` (con búsqueda en el catálogo existente antes de crear uno nuevo, para evitar duplicados).
-- [ ] Definir cómo se crea una `lista_compra` activa antes de que exista la auto-generación de Fase 3 (por ahora `ModoSupermercadoScreen` asume que ya existe).
-- [ ] Variables de entorno: `supabaseUrl` / `supabaseAnonKey` en `app.config.ts > extra`, nunca hardcodeadas en el código fuente.
+- [ ] Creación de una `lista_compra` activa (hoy `src/app/modo-supermercado.tsx` solo busca una existente; si no hay, muestra estado vacío) — antes de que exista la auto-generación de Fase 3.
 
 ## 5. Roadmap completo (fases futuras)
 
