@@ -10,8 +10,10 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
+import { useBuscarProductoSimilar } from '../hooks/useBuscarProductoSimilar';
+import type { ResultadoBusquedaProducto } from '../hooks/useBuscarProductoSimilar';
 import { supabase } from '../lib/supabase';
-import type { CategoriaProducto, ProductoBase, TablesInsert } from '../types/database.types';
+import type { CategoriaProducto, TablesInsert } from '../types/database.types';
 
 const LABEL_CATEGORIA: Record<CategoriaProducto, string> = {
   alimentos: 'Alimentos',
@@ -20,6 +22,14 @@ const LABEL_CATEGORIA: Record<CategoriaProducto, string> = {
 };
 
 const CATEGORIAS: CategoriaProducto[] = ['alimentos', 'higiene', 'limpieza'];
+
+// Producto ya existente en productos_base, elegido de la búsqueda: se
+// agrega directo a inventario_hogar, sin crear nada nuevo.
+interface ProductoExistente {
+  id: string;
+  nombre: string;
+  unidad_medida: string;
+}
 
 export default function AgregarProductoModal({
   visible,
@@ -33,10 +43,15 @@ export default function AgregarProductoModal({
   const { session } = useAuth();
 
   const [query, setQuery] = useState('');
-  const [resultados, setResultados] = useState<ProductoBase[]>([]);
-  const [buscando, setBuscando] = useState(false);
-  const [productoSeleccionado, setProductoSeleccionado] = useState<ProductoBase | null>(null);
+  const { resultados, buscando } = useBuscarProductoSimilar(
+    // No busques si ya se eligió algo: evita relanzar la búsqueda al
+    // prellenar nombreProducto con una sugerencia SEPA.
+    query
+  );
+
+  const [productoExistente, setProductoExistente] = useState<ProductoExistente | null>(null);
   const [creandoNuevo, setCreandoNuevo] = useState(false);
+  const [nombreProducto, setNombreProducto] = useState('');
 
   const [categoria, setCategoria] = useState<CategoriaProducto>('alimentos');
   const [unidadMedida, setUnidadMedida] = useState('unidad');
@@ -54,9 +69,9 @@ export default function AgregarProductoModal({
     if (!visible) {
       // reset al cerrar
       setQuery('');
-      setResultados([]);
-      setProductoSeleccionado(null);
+      setProductoExistente(null);
       setCreandoNuevo(false);
+      setNombreProducto('');
       setCategoria('alimentos');
       setUnidadMedida('unidad');
       setCodigoBarras('');
@@ -68,44 +83,32 @@ export default function AgregarProductoModal({
     }
   }, [visible]);
 
-  useEffect(() => {
-    if (!visible || productoSeleccionado || creandoNuevo) return;
-    if (query.trim().length < 2) {
-      setResultados([]);
+  const elegirResultado = (r: ResultadoBusquedaProducto) => {
+    if (r.origen === 'propio' && r.id) {
+      setProductoExistente({ id: r.id, nombre: r.nombre, unidad_medida: r.unidad_medida ?? 'unidad' });
       return;
     }
 
-    let cancelado = false;
-    setBuscando(true);
-    const timeout = setTimeout(async () => {
-      const { data } = await supabase
-        .from('productos_base')
-        .select('*')
-        .ilike('nombre', `%${query.trim()}%`)
-        .limit(10);
-
-      if (!cancelado) {
-        setResultados(data ?? []);
-        setBuscando(false);
-      }
-    }, 300);
-
-    return () => {
-      cancelado = true;
-      clearTimeout(timeout);
-    };
-  }, [query, visible, productoSeleccionado, creandoNuevo]);
+    // 'sepa': sugerencia del catálogo de referencia, todavía no existe en
+    // productos_base — prellena el formulario de creación con lo que sabemos.
+    setNombreProducto(r.nombre);
+    setCategoria(r.categoria);
+    setUnidadMedida(r.unidad_medida ?? 'unidad');
+    setCodigoBarras(r.codigo_barras ?? '');
+    setMarca(r.marca ?? '');
+    setCreandoNuevo(true);
+  };
 
   const crearProductoYAgregar = async () => {
     if (!session) return;
     setError(null);
     setGuardando(true);
 
-    let producto = productoSeleccionado;
+    let producto = productoExistente;
 
     if (!producto) {
       const nuevoProducto: TablesInsert<'productos_base'> = {
-        nombre: query.trim(),
+        nombre: nombreProducto.trim(),
         categoria,
         unidad_medida: unidadMedida.trim() || 'unidad',
         codigo_barras: codigoBarras.trim() || null,
@@ -123,7 +126,7 @@ export default function AgregarProductoModal({
         setGuardando(false);
         return;
       }
-      producto = data;
+      producto = { id: data.id, nombre: data.nombre, unidad_medida: data.unidad_medida };
     }
 
     const nuevoItem: TablesInsert<'inventario_hogar'> = {
@@ -152,7 +155,7 @@ export default function AgregarProductoModal({
     onClose();
   };
 
-  const pasoCantidad = productoSeleccionado || creandoNuevo;
+  const pasoCantidad = !!productoExistente || creandoNuevo;
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
@@ -172,28 +175,38 @@ export default function AgregarProductoModal({
                   style={styles.input}
                   placeholder="Buscar producto (ej: arroz)"
                   value={query}
-                  onChangeText={(t) => {
-                    setQuery(t);
-                    setProductoSeleccionado(null);
-                  }}
+                  onChangeText={setQuery}
                   autoFocus
                 />
 
                 {buscando && <ActivityIndicator style={styles.spinner} />}
 
-                {resultados.map((p) => (
+                {resultados.map((r, i) => (
                   <Pressable
-                    key={p.id}
+                    key={`${r.origen}-${r.id ?? r.codigo_barras ?? r.nombre}-${i}`}
                     style={styles.resultado}
-                    onPress={() => setProductoSeleccionado(p)}
+                    onPress={() => elegirResultado(r)}
                   >
-                    <Text style={styles.resultadoNombre}>{p.nombre}</Text>
-                    <Text style={styles.resultadoCategoria}>{LABEL_CATEGORIA[p.categoria]}</Text>
+                    <View style={styles.resultadoInfo}>
+                      <Text style={styles.resultadoNombre}>{r.nombre}</Text>
+                      <Text style={styles.resultadoCategoria}>{LABEL_CATEGORIA[r.categoria]}</Text>
+                    </View>
+                    {r.origen === 'sepa' && (
+                      <View style={styles.badgeSepa}>
+                        <Text style={styles.badgeSepaTexto}>catálogo</Text>
+                      </View>
+                    )}
                   </Pressable>
                 ))}
 
                 {query.trim().length >= 2 && !buscando && (
-                  <Pressable style={styles.crearNuevo} onPress={() => setCreandoNuevo(true)}>
+                  <Pressable
+                    style={styles.crearNuevo}
+                    onPress={() => {
+                      setNombreProducto(query.trim());
+                      setCreandoNuevo(true);
+                    }}
+                  >
                     <Text style={styles.crearNuevoTexto}>
                       + Crear "{query.trim()}" como producto nuevo
                     </Text>
@@ -202,7 +215,7 @@ export default function AgregarProductoModal({
               </>
             )}
 
-            {creandoNuevo && !productoSeleccionado && (
+            {creandoNuevo && !productoExistente && (
               <View style={styles.seccion}>
                 <Text style={styles.label}>Categoría</Text>
                 <View style={styles.chips}>
@@ -248,7 +261,7 @@ export default function AgregarProductoModal({
             {pasoCantidad && (
               <View style={styles.seccion}>
                 <Text style={styles.productoElegido}>
-                  {productoSeleccionado?.nombre ?? query.trim()}
+                  {productoExistente?.nombre ?? nombreProducto}
                 </Text>
 
                 <Text style={styles.label}>Cantidad actual</Text>
@@ -332,9 +345,18 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F3F4F6',
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
+  resultadoInfo: { flex: 1 },
   resultadoNombre: { fontSize: 15, fontWeight: '600' },
   resultadoCategoria: { fontSize: 13, color: '#6B7280' },
+  badgeSepa: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+  },
+  badgeSepaTexto: { fontSize: 11, color: '#6B7280', fontWeight: '600' },
   crearNuevo: { paddingVertical: 14 },
   crearNuevoTexto: { color: '#208AEF', fontWeight: '600' },
   seccion: { marginTop: 4 },

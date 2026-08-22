@@ -292,7 +292,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      // Agregado a mano: buscar_producto_similar todavía no existe en el
+      // proyecto remoto (vive en supabase/migrations/ en la rama
+      // feature/matching-productos-sepa, sin mergear/pushear). Reemplazar
+      // por el tipo real la próxima vez que se corra
+      // `supabase gen types typescript` después de deployar esa migración.
+      buscar_producto_similar: {
+        Args: {
+          texto_busqueda: string
+          limite?: number
+        }
+        Returns: {
+          origen: string
+          id: string | null
+          codigo_barras: string | null
+          nombre: string
+          marca: string | null
+          categoria: Database["public"]["Enums"]["categoria_producto"]
+          unidad_medida: string | null
+          similitud: number
+        }[]
+      }
     }
     Enums: {
       categoria_producto: "alimentos" | "higiene" | "limpieza"
