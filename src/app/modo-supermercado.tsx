@@ -2,13 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import ModoSupermercadoScreen from '../../screens/ModoSupermercadoScreen';
-import type { TablesInsert } from '../../types/database.types';
 
 export default function ModoSupermercadoTab() {
-  const { session } = useAuth();
   const [listaId, setListaId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [creando, setCreando] = useState(false);
@@ -31,58 +28,26 @@ export default function ModoSupermercadoTab() {
     buscarListaActiva();
   }, [buscarListaActiva]);
 
-  // MVP manual: hasta que exista la auto-generación de Fase 3 (Edge
-  // Function programada), la lista se arma acá mismo con lo que ya está
-  // en rojo/amarillo — mismo criterio que va a usar esa función después.
+  // fn_generar_lista_compra (backend): crea la lista con lo que ya está
+  // en rojo/amarillo, o devuelve la activa existente si ya hay una. La
+  // misma función corre sola todos los días vía pg_cron (Fase 3); esto
+  // es para generarla/refrescarla al toque, sin esperar al schedule.
   const crearListaConStockBajo = async () => {
-    if (!session) return;
     setError(null);
     setCreando(true);
 
-    const { data: itemsBajos, error: errorInventario } = await supabase
-      .from('inventario_hogar')
-      .select('producto_id, cantidad_actual, stock_minimo')
-      .in('estado_stock', ['rojo', 'amarillo']);
-
-    if (errorInventario) {
-      setError(errorInventario.message);
-      setCreando(false);
-      return;
-    }
-
-    const nuevaLista: TablesInsert<'listas_compra'> = { user_id: session.user.id };
-
-    const { data: lista, error: errorLista } = await supabase
-      .from('listas_compra')
-      .insert(nuevaLista)
-      .select('id')
-      .single();
-
-    if (errorLista || !lista) {
-      setError(errorLista?.message ?? 'No se pudo crear la lista.');
-      setCreando(false);
-      return;
-    }
-
-    if (itemsBajos && itemsBajos.length > 0) {
-      const detalle: TablesInsert<'detalle_lista'>[] = itemsBajos.map((item) => ({
-        lista_id: lista.id,
-        producto_id: item.producto_id,
-        // Comprar lo que falta para volver al mínimo, al menos 1 unidad.
-        cantidad_solicitada: Math.max(item.stock_minimo - item.cantidad_actual, 1),
-      }));
-
-      const { error: errorDetalle } = await supabase.from('detalle_lista').insert(detalle);
-
-      if (errorDetalle) {
-        setError(errorDetalle.message);
-        setCreando(false);
-        return;
-      }
-    }
+    const { data: listaIdNueva, error: errorRpc } = await supabase.rpc(
+      'fn_generar_lista_compra'
+    );
 
     setCreando(false);
-    setListaId(lista.id);
+
+    if (errorRpc || !listaIdNueva) {
+      setError(errorRpc?.message ?? 'No se pudo crear la lista.');
+      return;
+    }
+
+    setListaId(listaIdNueva);
   };
 
   if (loading) {

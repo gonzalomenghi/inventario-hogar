@@ -73,15 +73,24 @@ Archivos ya creados (en las carpetas correspondientes del proyecto Expo):
 - [x] Variables de entorno: `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` en `.env`.
 - [x] Pantalla de login/registro con Supabase Auth (email/contraseña).
 - [x] Pantalla para dar de alta productos nuevos en `productos_base` + agregarlos a `inventario_hogar` (con búsqueda en el catálogo existente antes de crear uno nuevo, para evitar duplicados).
-- [x] Creación de una `lista_compra` activa — botón en `src/app/modo-supermercado.tsx`, MVP manual (arma la lista con lo que ya está en rojo/amarillo; `cantidad_solicitada = max(stock_minimo - cantidad_actual, 1)`). Reemplazar por la auto-generación real de Fase 3 (Edge Function programada) cuando exista; por ahora es un botón que el usuario dispara a mano.
+- [x] Creación de una `lista_compra` activa — botón en `src/app/modo-supermercado.tsx`, llama al RPC `fn_generar_lista_compra()` (ver Fase 3 más abajo).
 
 **Fase 2 completa.** Falta solo lo marcado como pendiente real en la sección de matching difuso (sync de `catalogo_sepa_ref`, bloqueado externamente).
+
+## 4.1 Fase 3 — Auto-generación de listas (COMPLETA, mergeada y deployada)
+
+Migración `supabase/migrations/20260822205236_fase3_auto_generacion_listas.sql`. Tres funciones, no una Edge Function (más simple: es solo SQL disparado por `pg_cron`, no necesita runtime aparte):
+- **`fn_generar_lista_compra_interna(p_user_id uuid)`**: la lógica real (arma `listas_compra` + `detalle_lista` desde `inventario_hogar` en rojo/amarillo; `cantidad_solicitada = max(stock_minimo - cantidad_actual, 1)`; si ya hay una lista activa, la devuelve en vez de duplicar). `SECURITY DEFINER`, **sin** `GRANT EXECUTE` a nadie — no se llama directo, solo internamente.
+- **`fn_generar_lista_compra()`**: RPC pública que llama el frontend (`src/app/modo-supermercado.tsx`, botón "Crear lista de compras"). Usa `auth.uid()` adentro, nunca un `user_id` que mande el cliente. También es `SECURITY DEFINER` — **importante**: tuvo que serlo porque si es `SECURITY INVOKER` (default), el rol `authenticated` no tiene permiso para llamar a la función interna y todo falla con `permission denied for function fn_generar_lista_compra_interna` (encontrado y resuelto probando de verdad contra una base local, no evidente solo leyendo el código).
+- **`fn_generar_listas_automaticas()`**: batch que recorre todos los usuarios con stock bajo sin lista activa y les genera una. La dispara `pg_cron` todos los días a las 08:00 UTC (05:00 ART) — job `generar-listas-automaticas-diario` (ver `cron.job` en la base). Tampoco expuesta por RPC.
+
+El botón manual sigue disponible (llama el mismo RPC): sirve para generar/refrescar al toque sin esperar el schedule diario.
 
 ## 5. Roadmap completo (fases futuras)
 
 1. ~~Fase 1 — Modelado de datos~~ ✅
-2. Fase 2 — Frontend base (Expo + Supabase) — 🔄 en curso
-3. Fase 3 — Auto-generación de listas: función/Edge Function que arma `detalle_lista` a partir de `inventario_hogar` donde `estado_stock in ('rojo','amarillo')`.
+2. ~~Fase 2 — Frontend base (Expo + Supabase)~~ ✅
+3. ~~Fase 3 — Auto-generación de listas~~ ✅ (ver sección 4.1)
 4. Fase 4 — OCR de tickets: Edge Function que recibe imagen → modelo de visión → JSON estructurado (ítems, precios, descuentos) → matching contra `productos_base` (por nombre + código de barras) → carga en `precios_historico` con `fuente = 'ocr_ticket'`.
 5. Fase 5 — Dashboard de ahorro: vistas agregadas sobre `precios_historico` (gasto mensual, mejor supermercado por producto, tendencias de precio).
 6. Fase 6 — Refinamiento UI/UX: diseño visual, microinteracciones, scanner de código de barras.
