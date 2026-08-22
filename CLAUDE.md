@@ -86,13 +86,22 @@ Migración `supabase/migrations/20260822205236_fase3_auto_generacion_listas.sql`
 
 El botón manual sigue disponible (llama el mismo RPC): sirve para generar/refrescar al toque sin esperar el schedule diario.
 
+## 4.2 Fase 5 — Dashboard de ahorro (COMPLETA, mergeada y deployada)
+
+Migración `supabase/migrations/20260822211818_fase5_dashboard_ahorro.sql`: tres vistas de solo lectura sobre `precios_historico`, todas `WITH (security_invoker = true)` + `GRANT SELECT ... TO authenticated` explícito (mismo gotcha de `catalogo_sepa_ref`: sin el grant, RLS ni se llega a evaluar).
+- **`vista_gasto_mensual`**: gasto total y cantidad de compras por mes.
+- **`vista_mejor_supermercado_producto`**: promedia `precio_final` por producto+supermercado y se queda con el más barato (subquery de promedios + `DISTINCT ON`, no funciona con window function directo en el `ORDER BY` de un `DISTINCT ON`).
+- **`vista_tendencia_precio`**: histórico ordenado por producto/fecha; el cliente arma "subió/bajó X%" comparando el último precio contra el anterior (`hooks/useDashboardAhorro.ts`), no está en SQL.
+
+`screens/DashboardAhorroScreen.tsx` (tab Historial, reemplaza el placeholder). **Nota de layout:** la tab bar en web flota encima del contenido (`position: absolute` en `app-tabs.web.tsx`) y ninguna pantalla compensa ese espacio — no se había notado antes porque las demás pantallas centran su contenido (`flex:1, justifyContent:'center'`), pero acá el contenido arranca pegado arriba y el primer texto quedaba tapado. Se resolvió con `paddingTop: 76` en el `ScrollView` de esta pantalla puntual; si se agrega otra pantalla con contenido top-aligned (no centrado), va a tener el mismo problema — considerar en algún momento arreglarlo una sola vez en `app-tabs.web.tsx` en vez de parchear pantalla por pantalla.
+
 ## 5. Roadmap completo (fases futuras)
 
 1. ~~Fase 1 — Modelado de datos~~ ✅
 2. ~~Fase 2 — Frontend base (Expo + Supabase)~~ ✅
 3. ~~Fase 3 — Auto-generación de listas~~ ✅ (ver sección 4.1)
-4. Fase 4 — OCR de tickets: Edge Function que recibe imagen → modelo de visión → JSON estructurado (ítems, precios, descuentos) → matching contra `productos_base` (por nombre + código de barras) → carga en `precios_historico` con `fuente = 'ocr_ticket'`.
-5. Fase 5 — Dashboard de ahorro: vistas agregadas sobre `precios_historico` (gasto mensual, mejor supermercado por producto, tendencias de precio).
+4. Fase 4 — OCR de tickets: Edge Function que recibe imagen → modelo de visión → JSON estructurado (ítems, precios, descuentos) → matching contra `productos_base` (por nombre + código de barras) → carga en `precios_historico` con `fuente = 'ocr_ticket'`. 🔄 en curso — proveedor elegido: Claude (Anthropic).
+5. ~~Fase 5 — Dashboard de ahorro~~ ✅ (ver sección 4.2)
 6. Fase 6 — Refinamiento UI/UX: diseño visual, microinteracciones, scanner de código de barras.
 
 ## 6. Convenciones del proyecto
