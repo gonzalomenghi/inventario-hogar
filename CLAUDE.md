@@ -95,12 +95,22 @@ Migración `supabase/migrations/20260822211818_fase5_dashboard_ahorro.sql`: tres
 
 `screens/DashboardAhorroScreen.tsx` (tab Historial, reemplaza el placeholder). **Nota de layout:** la tab bar en web flota encima del contenido (`position: absolute` en `app-tabs.web.tsx`) y ninguna pantalla compensa ese espacio — no se había notado antes porque las demás pantallas centran su contenido (`flex:1, justifyContent:'center'`), pero acá el contenido arranca pegado arriba y el primer texto quedaba tapado. Se resolvió con `paddingTop: 76` en el `ScrollView` de esta pantalla puntual; si se agrega otra pantalla con contenido top-aligned (no centrado), va a tener el mismo problema — considerar en algún momento arreglarlo una sola vez en `app-tabs.web.tsx` en vez de parchear pantalla por pantalla.
 
+## 4.3 Fase 4 — OCR de tickets (COMPLETA, probada con un ticket real)
+
+`supabase/functions/procesar-ticket/index.ts` — Edge Function stateless: recibe una foto o PDF (base64) y devuelve el JSON de ítems vía Claude (Anthropic, modelo `claude-opus-5`, `output_config.format` con `type: "json_schema"`). **No escribe nada en la base** — el cliente revisa/edita el resultado en `screens/EscanearTicketModal.tsx` y recién ahí matchea (`buscar_producto_similar`) e inserta en `precios_historico` (`fuente = 'ocr_ticket'`), igual que el flujo manual.
+- Requiere el secret `ANTHROPIC_API_KEY` (`supabase secrets set ANTHROPIC_API_KEY=...`) — el usuario lo carga él mismo, nunca pasa por el chat. `SUPABASE_URL`/`SUPABASE_ANON_KEY` los inyecta la plataforma solos.
+- Auth propia adentro de la función (además del JWT check de la plataforma): valida `supabase.auth.getUser()` con el token del caller y rechaza con 401 si no hay usuario real — la función factura por llamada, no puede quedar abierta a cualquiera con la anon key.
+- Foto vs. PDF son bloques de contenido distintos en la Messages API (`type: 'image'` vs `type: 'document'`), no solo un `media_type` distinto — la función arma el bloque correcto según `mediaType`.
+- **Bug real encontrado y resuelto** (no evidente leyendo el código, solo probando con un archivo real): en web, `expo-document-picker` devuelve el **data URI completo** (`data:application/pdf;base64,XXXX`) en el campo `base64`, sin sacar el prefijo — a diferencia de `expo-image-picker`, que sí lo limpia (`result.split(',')?.[1]`, ver su código fuente). Mandarle ese string completo a Claude tira `400 Invalid base64 data`. `EscanearTicketModal.tsx` ahora le saca el prefijo explícitamente antes de mandarlo.
+- Nativo (iOS/Android) sin probar en esta sesión (sin capacidad de build nativo acá): usa `expo-file-system`'s `File.arrayBuffer()` + un encoder base64 a mano (`arrayBufferABase64` en el modal), porque la API nueva de `expo-file-system` no trae un helper de base64 y `DocumentPickerAsset.base64` solo existe en la plataforma web.
+- `app.json` tiene el plugin `expo-image-picker` con los textos de permiso de cámara/fotos en español — hace falta para builds nativos, no aplica en web.
+
 ## 5. Roadmap completo (fases futuras)
 
 1. ~~Fase 1 — Modelado de datos~~ ✅
 2. ~~Fase 2 — Frontend base (Expo + Supabase)~~ ✅
 3. ~~Fase 3 — Auto-generación de listas~~ ✅ (ver sección 4.1)
-4. Fase 4 — OCR de tickets: Edge Function que recibe imagen → modelo de visión → JSON estructurado (ítems, precios, descuentos) → matching contra `productos_base` (por nombre + código de barras) → carga en `precios_historico` con `fuente = 'ocr_ticket'`. 🔄 en curso — proveedor elegido: Claude (Anthropic).
+4. ~~Fase 4 — OCR de tickets~~ ✅ (ver sección 4.3)
 5. ~~Fase 5 — Dashboard de ahorro~~ ✅ (ver sección 4.2)
 6. Fase 6 — Refinamiento UI/UX: diseño visual, microinteracciones, scanner de código de barras.
 
