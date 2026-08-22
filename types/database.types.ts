@@ -319,7 +319,41 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      // Agregado a mano: todavía no existen en el proyecto remoto (rama
+      // feature/fase5-dashboard-ahorro, sin mergear/pushear). Reemplazar
+      // por el tipo real corriendo `supabase gen types typescript`
+      // después de deployar esa migración.
+      vista_gasto_mensual: {
+        Row: {
+          user_id: string
+          mes: string
+          gasto_total: number
+          cantidad_compras: number
+        }
+        Relationships: []
+      }
+      vista_mejor_supermercado_producto: {
+        Row: {
+          user_id: string
+          producto_id: string
+          producto_nombre: string
+          supermercado_id: string
+          supermercado_nombre: string
+          precio_promedio: number
+        }
+        Relationships: []
+      }
+      vista_tendencia_precio: {
+        Row: {
+          user_id: string
+          producto_id: string
+          producto_nombre: string
+          precio_final: number
+          fecha_registro: string
+          supermercado_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       buscar_producto_similar: {
@@ -524,3 +558,8 @@ export type ListaCompra = Database["public"]["Tables"]["listas_compra"]["Row"]
 export type DetalleListaItem = Database["public"]["Tables"]["detalle_lista"]["Row"] & {
   producto?: ProductoBase
 }
+
+export type GastoMensual = Database["public"]["Views"]["vista_gasto_mensual"]["Row"]
+export type MejorSupermercadoProducto =
+  Database["public"]["Views"]["vista_mejor_supermercado_producto"]["Row"]
+export type TendenciaPrecio = Database["public"]["Views"]["vista_tendencia_precio"]["Row"]
