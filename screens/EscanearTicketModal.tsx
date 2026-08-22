@@ -213,9 +213,11 @@ export default function EscanearTicketModal({
 
       const mejorMatch = matches?.[0];
       let productoId: string;
+      let unidadMedida: string;
 
       if (mejorMatch && mejorMatch.origen === 'propio' && mejorMatch.id) {
         productoId = mejorMatch.id;
+        unidadMedida = mejorMatch.unidad_medida ?? 'unidad';
       } else {
         const nuevoProducto: TablesInsert<'productos_base'> = {
           nombre: item.nombre,
@@ -225,7 +227,7 @@ export default function EscanearTicketModal({
         const { data: creado, error: errorProducto } = await supabase
           .from('productos_base')
           .insert(nuevoProducto)
-          .select('id')
+          .select('id, unidad_medida')
           .single();
 
         if (errorProducto || !creado) {
@@ -234,6 +236,48 @@ export default function EscanearTicketModal({
           return;
         }
         productoId = creado.id;
+        unidadMedida = creado.unidad_medida;
+      }
+
+      // Comprar algo = sube el stock Y queda el precio registrado, las dos
+      // cosas a la vez (no tiene sentido separarlas: un ticket siempre
+      // representa una compra real).
+      const cantidadComprada = Number(item.cantidad.replace(',', '.')) || 0;
+
+      const { data: itemInventario } = await supabase
+        .from('inventario_hogar')
+        .select('id, cantidad_actual')
+        .eq('producto_id', productoId)
+        .maybeSingle();
+
+      if (itemInventario) {
+        const { error: errorUpdateInv } = await supabase
+          .from('inventario_hogar')
+          .update({ cantidad_actual: itemInventario.cantidad_actual + cantidadComprada })
+          .eq('id', itemInventario.id);
+
+        if (errorUpdateInv) {
+          setError(errorUpdateInv.message);
+          setGuardando(false);
+          return;
+        }
+      } else {
+        const nuevoInventario: TablesInsert<'inventario_hogar'> = {
+          user_id: session.user.id,
+          producto_id: productoId,
+          cantidad_actual: cantidadComprada,
+          stock_minimo: 1,
+          unidad_medida: unidadMedida,
+        };
+        const { error: errorInsertInv } = await supabase
+          .from('inventario_hogar')
+          .insert(nuevoInventario);
+
+        if (errorInsertInv) {
+          setError(errorInsertInv.message);
+          setGuardando(false);
+          return;
+        }
       }
 
       const precioFinal = Number(item.precioFinal.replace(',', '.')) || 0;
@@ -390,7 +434,7 @@ export default function EscanearTicketModal({
                   {guardando ? (
                     <ActivityIndicator color="#fff" />
                   ) : (
-                    <Text style={styles.botonTexto}>Guardar precios</Text>
+                    <Text style={styles.botonTexto}>Sumar al inventario y guardar precios</Text>
                   )}
                 </Pressable>
               </View>

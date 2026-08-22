@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import AgregarProductoModal from './AgregarProductoModal';
+import EscanearTicketModal from './EscanearTicketModal';
 import { useInventario } from '../hooks/useInventario';
 import type { CategoriaProducto, EstadoStock, InventarioItem } from '../types/database.types';
 
@@ -26,6 +27,7 @@ const LABEL_CATEGORIA: Record<CategoriaProducto, string> = {
 export default function InventarioScreen() {
   const { items, loading, error, ajustarCantidad, refetch } = useInventario();
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalTicketVisible, setModalTicketVisible] = useState(false);
 
   const secciones = useMemo(() => {
     const categorias: CategoriaProducto[] = ['alimentos', 'higiene', 'limpieza'];
@@ -66,6 +68,14 @@ export default function InventarioScreen() {
       )}
 
       <Pressable
+        style={styles.fabTicket}
+        onPress={() => setModalTicketVisible(true)}
+        accessibilityLabel="Escanear ticket"
+      >
+        <Text style={styles.fabTicketTexto}>📷</Text>
+      </Pressable>
+
+      <Pressable
         style={styles.fab}
         onPress={() => setModalVisible(true)}
         accessibilityLabel="Agregar producto"
@@ -77,6 +87,12 @@ export default function InventarioScreen() {
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onAgregado={refetch}
+      />
+
+      <EscanearTicketModal
+        visible={modalTicketVisible}
+        onClose={() => setModalTicketVisible(false)}
+        onGuardado={refetch}
       />
     </View>
   );
@@ -180,4 +196,21 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   fabTexto: { color: '#fff', fontSize: 28, fontWeight: '600', lineHeight: 30 },
+  fabTicket: {
+    position: 'absolute',
+    right: 20,
+    bottom: 92,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  fabTicketTexto: { fontSize: 20 },
 });
