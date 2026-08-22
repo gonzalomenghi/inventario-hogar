@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   SectionList,
   View,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import AgregarProductoModal from './AgregarProductoModal';
 import { useInventario } from '../hooks/useInventario';
 import type { CategoriaProducto, EstadoStock, InventarioItem } from '../types/database.types';
 
@@ -23,7 +24,8 @@ const LABEL_CATEGORIA: Record<CategoriaProducto, string> = {
 };
 
 export default function InventarioScreen() {
-  const { items, loading, error, ajustarCantidad } = useInventario();
+  const { items, loading, error, ajustarCantidad, refetch } = useInventario();
+  const [modalVisible, setModalVisible] = useState(false);
 
   const secciones = useMemo(() => {
     const categorias: CategoriaProducto[] = ['alimentos', 'higiene', 'limpieza'];
@@ -35,42 +37,48 @@ export default function InventarioScreen() {
       .filter((sec) => sec.data.length > 0);
   }, [items]);
 
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>No se pudo cargar el inventario: {error}</Text>
-      </View>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <View style={styles.centered}>
-        <Text>Todavía no cargaste productos. Usá el botón + para empezar.</Text>
-      </View>
-    );
-  }
-
   return (
-    <SectionList
-      sections={secciones}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={styles.listContent}
-      renderSectionHeader={({ section }) => (
-        <Text style={styles.sectionHeader}>{section.title}</Text>
+    <View style={styles.container}>
+      {loading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" />
+        </View>
+      ) : error ? (
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>No se pudo cargar el inventario: {error}</Text>
+        </View>
+      ) : items.length === 0 ? (
+        <View style={styles.centered}>
+          <Text>Todavía no cargaste productos. Usá el botón + para empezar.</Text>
+        </View>
+      ) : (
+        <SectionList
+          sections={secciones}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          renderSectionHeader={({ section }) => (
+            <Text style={styles.sectionHeader}>{section.title}</Text>
+          )}
+          renderItem={({ item }) => (
+            <ItemInventario item={item} onAjustar={ajustarCantidad} />
+          )}
+        />
       )}
-      renderItem={({ item }) => (
-        <ItemInventario item={item} onAjustar={ajustarCantidad} />
-      )}
-    />
+
+      <Pressable
+        style={styles.fab}
+        onPress={() => setModalVisible(true)}
+        accessibilityLabel="Agregar producto"
+      >
+        <Text style={styles.fabTexto}>+</Text>
+      </Pressable>
+
+      <AgregarProductoModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onAgregado={refetch}
+      />
+    </View>
   );
 }
 
@@ -114,6 +122,7 @@ function ItemInventario({
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1 },
   listContent: { paddingBottom: 32 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { color: '#E5484D', textAlign: 'center' },
@@ -154,4 +163,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   botonTexto: { fontSize: 18, fontWeight: '700', color: '#111827' },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#208AEF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  fabTexto: { color: '#fff', fontSize: 28, fontWeight: '600', lineHeight: 30 },
 });
