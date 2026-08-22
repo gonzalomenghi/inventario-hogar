@@ -1,17 +1,37 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import DashboardAhorroScreen from '../../screens/DashboardAhorroScreen';
+import EscanearTicketModal from '../../screens/EscanearTicketModal';
 
 export default function HistorialTab() {
   const { session } = useAuth();
+  const [modalVisible, setModalVisible] = useState(false);
+  // Fuerza el remount del dashboard después de guardar precios nuevos,
+  // para que useDashboardAhorro vuelva a hacer fetch (no tiene Realtime).
+  const [refrescarKey, setRefrescarKey] = useState(0);
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <View style={{ flex: 1 }}>
-        <DashboardAhorroScreen />
+        <DashboardAhorroScreen key={refrescarKey} />
+
+        <Pressable
+          style={styles.fab}
+          onPress={() => setModalVisible(true)}
+          accessibilityLabel="Escanear ticket"
+        >
+          <Text style={styles.fabTexto}>📷</Text>
+        </Pressable>
+
+        <EscanearTicketModal
+          visible={modalVisible}
+          onClose={() => setModalVisible(false)}
+          onGuardado={() => setRefrescarKey((k) => k + 1)}
+        />
       </View>
 
       {session && (
@@ -43,4 +63,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   botonTexto: { color: '#E5484D', fontWeight: '600' },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#208AEF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  fabTexto: { fontSize: 24 },
 });
