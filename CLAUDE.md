@@ -77,7 +77,7 @@ Archivos ya creados (en las carpetas correspondientes del proyecto Expo):
 
 **Fase 2 completa.** Falta solo lo marcado como pendiente real en la sección de matching difuso (sync de `catalogo_sepa_ref`, bloqueado externamente).
 
-## 4.1 Fase 3 — Auto-generación de listas (COMPLETA, mergeada y deployada)
+## 4.1 Fase 3 — Auto-generación de listas (COMPLETA, mergeada y deployada — confirmado: cron job activo en el proyecto real)
 
 Migración `supabase/migrations/20260822205236_fase3_auto_generacion_listas.sql`. Tres funciones, no una Edge Function (más simple: es solo SQL disparado por `pg_cron`, no necesita runtime aparte):
 - **`fn_generar_lista_compra_interna(p_user_id uuid)`**: la lógica real (arma `listas_compra` + `detalle_lista` desde `inventario_hogar` en rojo/amarillo; `cantidad_solicitada = max(stock_minimo - cantidad_actual, 1)`; si ya hay una lista activa, la devuelve en vez de duplicar). `SECURITY DEFINER`, **sin** `GRANT EXECUTE` a nadie — no se llama directo, solo internamente.

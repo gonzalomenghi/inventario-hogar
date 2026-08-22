@@ -322,14 +322,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      // Agregado a mano: todavía no existe en el proyecto remoto (rama
-      // feature/fase3-auto-generacion-listas, sin mergear/pushear).
-      // Reemplazar por el tipo real corriendo `supabase gen types
-      // typescript` después de deployar esa migración.
-      fn_generar_lista_compra: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
       buscar_producto_similar: {
         Args: { limite?: number; texto_busqueda: string }
         Returns: {
@@ -343,6 +335,12 @@ export type Database = {
           unidad_medida: string
         }[]
       }
+      fn_generar_lista_compra: { Args: never; Returns: string }
+      fn_generar_lista_compra_interna: {
+        Args: { p_user_id: string }
+        Returns: string
+      }
+      fn_generar_listas_automaticas: { Args: never; Returns: undefined }
       inmutable_unaccent: { Args: { "": string }; Returns: string }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
