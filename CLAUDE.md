@@ -44,6 +44,18 @@ Todas las tablas de usuario (`inventario_hogar`, `listas_compra`, `detalle_lista
 
 **Nota de testing:** desde el SQL Editor de Supabase, `auth.uid()` devuelve `null` porque corre como `service_role`. Para probar el flujo con RLS real hay que hacerlo logueado desde el frontend.
 
+### Matching difuso de productos (extensión, rama `feature/matching-productos-sepa`, sin mergear)
+Migraciones `supabase/migrations/2026082216*_matching_productos*.sql`, aditivas puras (no tocan tablas existentes):
+- **`catalogo_sepa_ref`**: diccionario de referencia (EAN, nombre, marca, categoría sugerida) sincronizado periódicamente desde el dataset SEPA/Precios Claros (datos.produccion.gob.ar/dataset/sepa-precios). RLS con lectura pública; solo la escribe el proceso de sync (`service_role`).
+- **`buscar_producto_similar(texto_busqueda, limite)`**: búsqueda difusa (`pg_trgm` + `unaccent`) que devuelve primero matches en `productos_base` propio (con `id` real, listo para usar) y, si no hay, sugerencias de `catalogo_sepa_ref` (`id` null — todavía no existen en el catálogo propio).
+- **`hooks/useBuscarProductoSimilar.ts`**: wrapper del RPC con debounce (300ms). `screens/AgregarProductoModal.tsx` lo usa en el paso de búsqueda: un resultado `origen: 'propio'` se agrega directo a `inventario_hogar`; uno `origen: 'sepa'` prellena el formulario de "crear nuevo" (categoría/marca/código/unidad) en vez de agregarse directo, porque hay que crearlo en `productos_base` primero.
+- **`types/database.types.ts`**: la entrada de `buscar_producto_similar` en `Database.public.Functions` está **agregada a mano** (comentario en el archivo) porque la función no existe todavía en el proyecto remoto — reemplazar por el tipo real corriendo `supabase gen types typescript` después de deployar esta rama.
+- **3 bugs reales encontrados y resueltos, todos validados contra una base local en Docker (`supabase start` + inserts + `db query`), no solo "aplicó sin error":**
+  1. `unaccent()` es `STABLE` no `IMMUTABLE` → no se puede usar directo en un índice funcional. Wrapper `inmutable_unaccent()`.
+  2. Un `SET search_path` a nivel de archivo de migración **no se sostiene de forma confiable entre statements** en el runner de la CLI (cada DDL/función/índice resuelve por su lado) — todo quedó calificado explícito con `public.` (`OPERATOR(public.%)`, `public.gin_trgm_ops`) en vez de depender de él.
+  3. Faltaban los `GRANT SELECT` a `anon`/`authenticated` sobre `catalogo_sepa_ref` — RLS controla acceso por fila, pero sin el grant de tabla Postgres tira `permission denied` antes de siquiera evaluar las policies. Ver `20260822164109_matching_productos_grants.sql`.
+- **Pendiente real:** `supabase/functions/sync-catalogo-sepa/index.ts` es un stub (501, sin implementar) — falta el fetch/parseo del dataset SEPA y la definición de cómo dispararlo periódicamente (`pg_cron`+`pg_net` nativo de Supabase, o cron externo tipo GitHub Actions). Ver comentarios en ese archivo.
+
 ## 4. Fase 2 — Frontend (EN CURSO)
 
 Archivos ya creados (en las carpetas correspondientes del proyecto Expo):
