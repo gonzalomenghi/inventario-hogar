@@ -21,6 +21,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      catalogo_sepa_ref: {
+        Row: {
+          categoria_sugerida:
+            | Database["public"]["Enums"]["categoria_producto"]
+            | null
+          codigo_barras: string
+          marca: string | null
+          nombre_sepa: string
+          ultima_actualizacion: string
+        }
+        Insert: {
+          categoria_sugerida?:
+            | Database["public"]["Enums"]["categoria_producto"]
+            | null
+          codigo_barras: string
+          marca?: string | null
+          nombre_sepa: string
+          ultima_actualizacion?: string
+        }
+        Update: {
+          categoria_sugerida?:
+            | Database["public"]["Enums"]["categoria_producto"]
+            | null
+          codigo_barras?: string
+          marca?: string | null
+          nombre_sepa?: string
+          ultima_actualizacion?: string
+        }
+        Relationships: []
+      }
       detalle_lista: {
         Row: {
           cantidad_comprada: number | null
@@ -292,27 +322,23 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      // Agregado a mano: buscar_producto_similar todavía no existe en el
-      // proyecto remoto (vive en supabase/migrations/ en la rama
-      // feature/matching-productos-sepa, sin mergear/pushear). Reemplazar
-      // por el tipo real la próxima vez que se corra
-      // `supabase gen types typescript` después de deployar esa migración.
       buscar_producto_similar: {
-        Args: {
-          texto_busqueda: string
-          limite?: number
-        }
+        Args: { limite?: number; texto_busqueda: string }
         Returns: {
-          origen: string
-          id: string | null
-          codigo_barras: string | null
-          nombre: string
-          marca: string | null
           categoria: Database["public"]["Enums"]["categoria_producto"]
-          unidad_medida: string | null
+          codigo_barras: string
+          id: string
+          marca: string
+          nombre: string
+          origen: string
           similitud: number
+          unidad_medida: string
         }[]
       }
+      inmutable_unaccent: { Args: { "": string }; Returns: string }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       categoria_producto: "alimentos" | "higiene" | "limpieza"
