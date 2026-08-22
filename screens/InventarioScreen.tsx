@@ -51,6 +51,14 @@ export default function InventarioScreen() {
     );
   }
 
+  if (items.length === 0) {
+    return (
+      <View style={styles.centered}>
+        <Text>Todavía no cargaste productos. Usá el botón + para empezar.</Text>
+      </View>
+    );
+  }
+
   return (
     <SectionList
       sections={secciones}
@@ -62,11 +70,6 @@ export default function InventarioScreen() {
       renderItem={({ item }) => (
         <ItemInventario item={item} onAjustar={ajustarCantidad} />
       )}
-      ListEmptyComponent={
-        <View style={styles.centered}>
-          <Text>Todavía no cargaste productos. Usá el botón + para empezar.</Text>
-        </View>
-      }
     />
   );
 }
