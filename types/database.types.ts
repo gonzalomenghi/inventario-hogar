@@ -319,40 +319,66 @@ export type Database = {
       }
     }
     Views: {
-      // Agregado a mano: todavía no existen en el proyecto remoto (rama
-      // feature/fase5-dashboard-ahorro, sin mergear/pushear). Reemplazar
-      // por el tipo real corriendo `supabase gen types typescript`
-      // después de deployar esa migración.
       vista_gasto_mensual: {
         Row: {
-          user_id: string
-          mes: string
-          gasto_total: number
-          cantidad_compras: number
+          cantidad_compras: number | null
+          gasto_total: number | null
+          mes: string | null
+          user_id: string | null
         }
         Relationships: []
       }
       vista_mejor_supermercado_producto: {
         Row: {
-          user_id: string
-          producto_id: string
-          producto_nombre: string
-          supermercado_id: string
-          supermercado_nombre: string
-          precio_promedio: number
+          precio_promedio: number | null
+          producto_id: string | null
+          producto_nombre: string | null
+          supermercado_id: string | null
+          supermercado_nombre: string | null
+          user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "precios_historico_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos_base"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "precios_historico_supermercado_id_fkey"
+            columns: ["supermercado_id"]
+            isOneToOne: false
+            referencedRelation: "supermercados"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vista_tendencia_precio: {
         Row: {
-          user_id: string
-          producto_id: string
-          producto_nombre: string
-          precio_final: number
-          fecha_registro: string
+          fecha_registro: string | null
+          precio_final: number | null
+          producto_id: string | null
+          producto_nombre: string | null
           supermercado_id: string | null
+          user_id: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "precios_historico_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos_base"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "precios_historico_supermercado_id_fkey"
+            columns: ["supermercado_id"]
+            isOneToOne: false
+            referencedRelation: "supermercados"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -559,7 +585,30 @@ export type DetalleListaItem = Database["public"]["Tables"]["detalle_lista"]["Ro
   producto?: ProductoBase
 }
 
-export type GastoMensual = Database["public"]["Views"]["vista_gasto_mensual"]["Row"]
-export type MejorSupermercadoProducto =
-  Database["public"]["Views"]["vista_mejor_supermercado_producto"]["Row"]
-export type TendenciaPrecio = Database["public"]["Views"]["vista_tendencia_precio"]["Row"]
+// Las 3 vistas salen "nullable" del generador (Postgres no expone NOT
+// NULL a través de vistas), pero en la práctica nunca lo son: agregan
+// sobre columnas NOT NULL de precios_historico y usan join interno con
+// productos_base/supermercados. Redefinidas no-nulas acá, igual que
+// InventarioItem arriba con estado_stock.
+export type GastoMensual = {
+  [K in keyof Database["public"]["Views"]["vista_gasto_mensual"]["Row"]]: NonNullable<
+    Database["public"]["Views"]["vista_gasto_mensual"]["Row"][K]
+  >
+}
+export type MejorSupermercadoProducto = {
+  [K in keyof Database["public"]["Views"]["vista_mejor_supermercado_producto"]["Row"]]: NonNullable<
+    Database["public"]["Views"]["vista_mejor_supermercado_producto"]["Row"][K]
+  >
+}
+export type TendenciaPrecio = Omit<
+  {
+    [K in keyof Database["public"]["Views"]["vista_tendencia_precio"]["Row"]]: NonNullable<
+      Database["public"]["Views"]["vista_tendencia_precio"]["Row"][K]
+    >
+  },
+  "supermercado_id"
+> & {
+  // Único campo genuinamente nullable: detalle_lista/precios_historico
+  // permite cargar un precio sin especificar en qué supermercado.
+  supermercado_id: string | null
+}

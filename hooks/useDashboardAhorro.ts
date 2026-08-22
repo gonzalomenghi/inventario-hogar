@@ -63,9 +63,9 @@ export function useDashboardAhorro() {
         return;
       }
 
-      setGastoMensual(gastoRes.data ?? []);
-      setMejorSupermercado(supermercadoRes.data ?? []);
-      setTendencias(calcularTendencias(tendenciaRes.data ?? []));
+      setGastoMensual((gastoRes.data ?? []) as GastoMensual[]);
+      setMejorSupermercado((supermercadoRes.data ?? []) as MejorSupermercadoProducto[]);
+      setTendencias(calcularTendencias((tendenciaRes.data ?? []) as TendenciaPrecio[]));
       setLoading(false);
     })();
 
