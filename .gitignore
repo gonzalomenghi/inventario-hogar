@@ -43,5 +43,6 @@ example
 /ios
 /android
 
-# Supabase CLI local link metadata
+# Supabase CLI local link/branch metadata
 supabase/.temp/
+supabase/.branches/

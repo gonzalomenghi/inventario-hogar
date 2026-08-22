@@ -44,6 +44,13 @@ Todas las tablas de usuario (`inventario_hogar`, `listas_compra`, `detalle_lista
 
 **Nota de testing:** desde el SQL Editor de Supabase, `auth.uid()` devuelve `null` porque corre como `service_role`. Para probar el flujo con RLS real hay que hacerlo logueado desde el frontend.
 
+### Matching difuso de productos (extensión, rama `feature/matching-productos-sepa`)
+Migración `supabase/migrations/20260822161157_matching_productos.sql`, aditiva pura (no toca tablas existentes):
+- **`catalogo_sepa_ref`**: diccionario de referencia (EAN, nombre, marca, categoría sugerida) sincronizado periódicamente desde el dataset SEPA/Precios Claros (datos.produccion.gob.ar/dataset/sepa-precios). RLS con lectura pública; solo la escribe el proceso de sync (`service_role`).
+- **`buscar_producto_similar(texto_busqueda, limite)`**: búsqueda difusa (`pg_trgm` + `unaccent`) que devuelve primero matches en `productos_base` propio y, si no hay, en `catalogo_sepa_ref`. Pensada para autocompletar el paso de búsqueda de `AgregarProductoModal.tsx` (hoy usa `ilike` simple) vía un hook `useBuscarProductoSimilar` que llame `supabase.rpc('buscar_producto_similar', {...})` — sugerido, no implementado todavía.
+- **Gotcha real encontrado y resuelto:** `unaccent()` es `STABLE` no `IMMUTABLE`, así que no se puede usar directo en un índice funcional; y las extensiones (`pg_trgm`/`unaccent`) quedan instaladas en `public` pero un `SET search_path` a nivel de archivo de migración **no se sostiene de forma confiable entre statements** en el runner de la CLI. Solución: todo calificado explícito con `public.` (funciones, `OPERATOR(public.%)`, `public.gin_trgm_ops`) más `SET search_path = public` a nivel de función. Si se vuelve a tocar esta migración, no confiar en un `SET search_path` suelto al principio del archivo.
+- **Pendiente real:** `supabase/functions/sync-catalogo-sepa/index.ts` es un stub (501, sin implementar) — falta el fetch/parseo del dataset SEPA y la definición de cómo dispararlo periódicamente (`pg_cron`+`pg_net` nativo de Supabase, o cron externo tipo GitHub Actions). Ver comentarios en ese archivo.
+
 ## 4. Fase 2 — Frontend (EN CURSO)
 
 Archivos ya creados (en las carpetas correspondientes del proyecto Expo):
