@@ -27,15 +27,35 @@ export default function InventarioScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalTicketVisible, setModalTicketVisible] = useState(false);
   const [detalleItem, setDetalleItem] = useState<InventarioItem | null>(null);
+  // Efímero, sin persistir: son 3 categorías hoy, re-expandir cuesta un
+  // tap y persistir agregaría un read async al montar para poco beneficio.
+  const [colapsadas, setColapsadas] = useState<Set<string>>(new Set());
 
   const secciones = useMemo(() => {
     return categorias
-      .map((cat) => ({
-        title: `${cat.icono} ${cat.nombre}`,
-        data: items.filter((it) => it.producto?.categoria_id === cat.id),
-      }))
-      .filter((sec) => sec.data.length > 0);
-  }, [items, categorias]);
+      .map((cat) => {
+        const itemsCategoria = items.filter((it) => it.producto?.categoria_id === cat.id);
+        return {
+          id: cat.id,
+          title: `${cat.icono} ${cat.nombre}`,
+          count: itemsCategoria.length,
+          // SectionList no tiene collapse nativo: se mantiene la sección
+          // (con su header) en el array y se le pasa data: [] cuando está
+          // colapsada, así el header sigue visible pero sin ítems debajo.
+          data: colapsadas.has(cat.id) ? [] : itemsCategoria,
+        };
+      })
+      .filter((sec) => sec.count > 0);
+  }, [items, categorias, colapsadas]);
+
+  const toggleColapsada = (categoriaId: string) => {
+    setColapsadas((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoriaId)) next.delete(categoriaId);
+      else next.add(categoriaId);
+      return next;
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -57,7 +77,17 @@ export default function InventarioScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           renderSectionHeader={({ section }) => (
-            <Text style={styles.sectionHeader}>{section.title}</Text>
+            <Pressable
+              style={styles.sectionHeader}
+              onPress={() => toggleColapsada(section.id)}
+            >
+              <Text style={styles.sectionHeaderTexto}>
+                {section.title} ({section.count})
+              </Text>
+              <Text style={styles.sectionHeaderChevron}>
+                {colapsadas.has(section.id) ? '▸' : '▾'}
+              </Text>
+            </Pressable>
           )}
           renderItem={({ item }) => (
             <ItemInventario item={item} onAjustar={ajustarCantidad} onDetalle={setDetalleItem} />
@@ -150,21 +180,30 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { color: Colors.error, textAlign: 'center' },
   sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  sectionHeaderTexto: {
     fontSize: 14,
     fontWeight: '700',
     textTransform: 'uppercase',
     color: Colors.textSecondary,
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 8,
+  },
+  sectionHeaderChevron: {
+    fontSize: 13,
+    color: Colors.textSecondary,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.white,
     marginHorizontal: 12,
-    marginBottom: 8,
-    padding: 12,
+    marginBottom: 6,
+    padding: 10,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOpacity: 0.05,

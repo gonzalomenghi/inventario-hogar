@@ -3,14 +3,20 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '../../constants/colors';
+import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import ModoSupermercadoScreen from '../../screens/ModoSupermercadoScreen';
+import SupermercadoPicker from '../../screens/SupermercadoPicker';
 
 export default function ModoSupermercadoTab() {
+  const { session } = useAuth();
   const [listaId, setListaId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [creando, setCreando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [creandoManual, setCreandoManual] = useState(false);
+  const [supermercadoManual, setSupermercadoManual] = useState<string | null>(null);
 
   const buscarListaActiva = useCallback(async () => {
     const { data } = await supabase
@@ -51,6 +57,38 @@ export default function ModoSupermercadoTab() {
     setListaId(listaIdNueva);
   };
 
+  // Lista manual: arranca vacía con el supermercado elegido; se llena
+  // después desde el "+" de ModoSupermercadoScreen (AgregarItemListaModal).
+  // A diferencia del RPC, acá el insert es directo desde el cliente, así
+  // que hace falta el user_id explícito (el RPC lo resuelve solo via
+  // auth.uid() del lado del server).
+  const crearListaManual = async () => {
+    if (!session || !supermercadoManual) return;
+    setError(null);
+    setCreando(true);
+
+    const { data, error: errorInsert } = await supabase
+      .from('listas_compra')
+      .insert({ user_id: session.user.id, supermercado_id: supermercadoManual })
+      .select('id')
+      .single();
+
+    setCreando(false);
+
+    if (errorInsert || !data) {
+      setError(errorInsert?.message ?? 'No se pudo crear la lista.');
+      return;
+    }
+
+    // Reset acá (no solo en el reset-on-close de un modal, porque esta
+    // pantalla nunca se desmonta): si no, al cancelar/eliminar la lista y
+    // volver a este estado vacío, el formulario de "Crear lista manual"
+    // queda expandido de la vez anterior en vez de mostrar el botón.
+    setCreandoManual(false);
+    setSupermercadoManual(null);
+    setListaId(data.id);
+  };
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -73,11 +111,37 @@ export default function ModoSupermercadoTab() {
             disabled={creando}
           >
             {creando ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={Colors.white} />
             ) : (
               <Text style={styles.botonTexto}>Crear lista de compras</Text>
             )}
           </Pressable>
+
+          {!creandoManual ? (
+            <Pressable style={styles.botonSecundario} onPress={() => setCreandoManual(true)}>
+              <Text style={styles.botonSecundarioTexto}>Crear lista manual</Text>
+            </Pressable>
+          ) : (
+            <View style={styles.formManual}>
+              <Text style={styles.label}>Elegí el supermercado</Text>
+              <SupermercadoPicker value={supermercadoManual} onChange={setSupermercadoManual} />
+
+              <Pressable
+                style={[
+                  styles.boton,
+                  (creando || !supermercadoManual) && styles.botonDisabled,
+                ]}
+                onPress={crearListaManual}
+                disabled={creando || !supermercadoManual}
+              >
+                {creando ? (
+                  <ActivityIndicator color={Colors.white} />
+                ) : (
+                  <Text style={styles.botonTexto}>Crear lista</Text>
+                )}
+              </Pressable>
+            </View>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -85,7 +149,7 @@ export default function ModoSupermercadoTab() {
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-      <ModoSupermercadoScreen listaId={listaId} />
+      <ModoSupermercadoScreen listaId={listaId} onSalir={() => setListaId(null)} />
     </SafeAreaView>
   );
 }
@@ -104,4 +168,15 @@ const styles = StyleSheet.create({
   },
   botonDisabled: { opacity: 0.5 },
   botonTexto: { color: Colors.white, fontWeight: '700', fontSize: 16 },
+  botonSecundario: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  botonSecundarioTexto: { color: Colors.textPrimary, fontWeight: '600', fontSize: 16 },
+  formManual: { width: '100%', maxWidth: 360, gap: 8 },
+  label: { fontSize: 13, color: Colors.textSecondary, marginBottom: 2 },
 });

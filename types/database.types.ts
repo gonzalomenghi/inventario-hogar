@@ -597,6 +597,7 @@ export const Constants = {
 // ---------------------------------------------------------------------------
 
 export type Categoria = Tables<"categorias">
+export type Supermercado = Tables<"supermercados">
 export type EstadoLista = Database["public"]["Enums"]["estado_lista"]
 export type FuentePrecio = Database["public"]["Enums"]["fuente_precio"]
 export type TipoDescuento = Database["public"]["Enums"]["tipo_descuento"]

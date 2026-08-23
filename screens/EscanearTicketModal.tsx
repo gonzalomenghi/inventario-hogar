@@ -16,6 +16,7 @@ import {
 import { Colors } from '../constants/colors';
 import { useAuth } from '../hooks/useAuth';
 import { useEscanearTicket } from '../hooks/useEscanearTicket';
+import { useSupermercados } from '../hooks/useSupermercados';
 import { supabase } from '../lib/supabase';
 import type { TablesInsert } from '../types/database.types';
 
@@ -53,6 +54,7 @@ export default function EscanearTicketModal({
 }) {
   const { session } = useAuth();
   const { procesarTicket, procesando, error: errorProcesar } = useEscanearTicket();
+  const { crearSupermercado } = useSupermercados();
 
   const [imagenUri, setImagenUri] = useState<string | null>(null);
   const [imagenBase64, setImagenBase64] = useState<string | null>(null);
@@ -178,32 +180,13 @@ export default function EscanearTicketModal({
     const nombreSuper = supermercadoNombre.trim();
 
     if (nombreSuper) {
-      const { data: existente } = await supabase
-        .from('supermercados')
-        .select('id')
-        .eq('nombre', nombreSuper)
-        .maybeSingle();
-
-      if (existente) {
-        supermercadoId = (existente as { id: string }).id;
-      } else {
-        const nuevoSuper: TablesInsert<'supermercados'> = {
-          user_id: session.user.id,
-          nombre: nombreSuper,
-        };
-        const { data: creado, error: errorSuper } = await supabase
-          .from('supermercados')
-          .insert(nuevoSuper)
-          .select('id')
-          .single();
-
-        if (errorSuper || !creado) {
-          setError(errorSuper?.message ?? 'No se pudo guardar el supermercado.');
-          setGuardando(false);
-          return;
-        }
-        supermercadoId = creado.id;
+      const supermercado = await crearSupermercado(nombreSuper);
+      if (!supermercado) {
+        setError('No se pudo guardar el supermercado.');
+        setGuardando(false);
+        return;
       }
+      supermercadoId = supermercado.id;
     }
 
     // Esta pantalla no tiene selector de categoría (el ticket no la trae),
