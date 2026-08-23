@@ -392,6 +392,7 @@ export type Database = {
         Row: {
           fecha_registro: string | null
           precio_final: number | null
+          precio_unitario: number | null
           producto_id: string | null
           producto_nombre: string | null
           supermercado_id: string | null
