@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import type { CategoriaProducto } from '../types/database.types';
 
 export interface ResultadoBusquedaProducto {
   origen: 'propio' | 'sepa';
@@ -10,7 +9,11 @@ export interface ResultadoBusquedaProducto {
   codigo_barras: string | null;
   nombre: string;
   marca: string | null;
-  categoria: CategoriaProducto;
+  // Una sugerencia 'sepa' puede no tener categoría sugerida (LEFT JOIN
+  // en buscar_producto_similar) — los tres vienen null en ese caso.
+  categoria_id: string | null;
+  categoria_nombre: string | null;
+  categoria_icono: string | null;
   unidad_medida: string | null;
   similitud: number;
 }

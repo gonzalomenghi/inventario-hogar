@@ -206,7 +206,30 @@ export default function EscanearTicketModal({
       }
     }
 
-    for (const item of items.filter((it) => it.incluido)) {
+    // Esta pantalla no tiene selector de categoría (el ticket no la trae),
+    // así que un producto detectado que no matchea nada existente se crea
+    // en "Alimentos" por defecto. Se resuelve una sola vez acá, no por
+    // cada ítem del ticket.
+    let categoriaAlimentosId: string | null = null;
+    const itemsAIncluir = items.filter((it) => it.incluido);
+    const necesitaCategoriaDefault = itemsAIncluir.length > 0;
+
+    if (necesitaCategoriaDefault) {
+      const { data: categoriaDefault } = await supabase
+        .from('categorias')
+        .select('id')
+        .ilike('nombre', 'alimentos')
+        .maybeSingle();
+
+      if (!categoriaDefault) {
+        setError('No se encontró la categoría "Alimentos" por defecto; no se pudo procesar el ticket.');
+        setGuardando(false);
+        return;
+      }
+      categoriaAlimentosId = categoriaDefault.id;
+    }
+
+    for (const item of itemsAIncluir) {
       const { data: matches } = await supabase.rpc('buscar_producto_similar', {
         texto_busqueda: item.nombre,
         limite: 1,
@@ -222,7 +245,7 @@ export default function EscanearTicketModal({
       } else {
         const nuevoProducto: TablesInsert<'productos_base'> = {
           nombre: item.nombre,
-          categoria: 'alimentos',
+          categoria_id: categoriaAlimentosId!,
           unidad_medida: 'unidad',
         };
         const { data: creado, error: errorProducto } = await supabase
