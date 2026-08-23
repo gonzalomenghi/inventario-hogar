@@ -43,6 +43,10 @@ export default function DetalleProductoModal({
   const [errorStock, setErrorStock] = useState<string | null>(null);
   const [stockGuardado, setStockGuardado] = useState(false);
 
+  const [confirmandoEliminar, setConfirmandoEliminar] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
+  const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
+
   useEffect(() => {
     if (visible && item) {
       setCategoriaId(item.producto?.categoria_id ?? null);
@@ -52,6 +56,8 @@ export default function DetalleProductoModal({
       setErrorStock(null);
       setCategoriaGuardada(false);
       setStockGuardado(false);
+      setConfirmandoEliminar(false);
+      setErrorEliminar(null);
     }
   }, [visible, item]);
 
@@ -99,6 +105,26 @@ export default function DetalleProductoModal({
     }
     setStockGuardado(true);
     onGuardado();
+  };
+
+  // Borra solo la fila de inventario_hogar del usuario — no toca
+  // productos_base (catálogo compartido, referenciado por historial de
+  // precios y otras listas) ni el historial de precios ya registrado.
+  const eliminarDelInventario = async () => {
+    setEliminando(true);
+    setErrorEliminar(null);
+
+    const { error } = await supabase.from('inventario_hogar').delete().eq('id', item.id);
+
+    setEliminando(false);
+
+    if (error) {
+      setErrorEliminar(error.message);
+      return;
+    }
+
+    onGuardado();
+    onClose();
   };
 
   return (
@@ -174,6 +200,45 @@ export default function DetalleProductoModal({
                 )}
               </Pressable>
             </View>
+
+            <View style={styles.seccion}>
+              {errorEliminar && <Text style={styles.error}>{errorEliminar}</Text>}
+
+              {!confirmandoEliminar ? (
+                <Pressable
+                  style={styles.botonEliminar}
+                  onPress={() => setConfirmandoEliminar(true)}
+                >
+                  <Text style={styles.botonEliminarTexto}>Eliminar del inventario</Text>
+                </Pressable>
+              ) : (
+                <View style={styles.confirmEliminar}>
+                  <Text style={styles.confirmEliminarTexto}>
+                    ¿Eliminar "{item.producto?.nombre}" de tu inventario?
+                  </Text>
+                  <View style={styles.confirmEliminarBotones}>
+                    <Pressable
+                      style={styles.confirmCancelar}
+                      onPress={() => setConfirmandoEliminar(false)}
+                      disabled={eliminando}
+                    >
+                      <Text style={styles.confirmCancelarTexto}>Cancelar</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.confirmEliminarBoton, eliminando && styles.botonDisabled]}
+                      onPress={eliminarDelInventario}
+                      disabled={eliminando}
+                    >
+                      {eliminando ? (
+                        <ActivityIndicator color={Colors.white} />
+                      ) : (
+                        <Text style={styles.confirmEliminarBotonTexto}>Sí, eliminar</Text>
+                      )}
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -227,4 +292,31 @@ const styles = StyleSheet.create({
   },
   botonDisabled: { opacity: 0.5 },
   botonTexto: { color: Colors.white, fontWeight: '700', fontSize: 15 },
+  botonEliminar: { alignItems: 'center', padding: 8 },
+  botonEliminarTexto: { color: Colors.error, fontWeight: '600', fontSize: 14 },
+  confirmEliminar: {
+    backgroundColor: Colors.backgroundMuted,
+    borderRadius: 12,
+    padding: 12,
+    gap: 10,
+  },
+  confirmEliminarTexto: { fontSize: 14, color: Colors.textPrimary, textAlign: 'center' },
+  confirmEliminarBotones: { flexDirection: 'row', gap: 8 },
+  confirmCancelar: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+  },
+  confirmCancelarTexto: { color: Colors.textSecondary, fontWeight: '600' },
+  confirmEliminarBoton: {
+    flex: 1,
+    backgroundColor: Colors.error,
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+  },
+  confirmEliminarBotonTexto: { color: Colors.white, fontWeight: '700' },
 });

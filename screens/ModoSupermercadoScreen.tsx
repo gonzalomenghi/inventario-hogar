@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, TextInput, Modal } from 'react-native';
 import AgregarItemListaModal from './AgregarItemListaModal';
 import DescuentoPicker from './DescuentoPicker';
 import SupermercadoPicker from './SupermercadoPicker';
@@ -12,7 +12,13 @@ interface DescuentoEdicion {
   valor: string;
 }
 
-export default function ModoSupermercadoScreen({ listaId }: { listaId: string }) {
+export default function ModoSupermercadoScreen({
+  listaId,
+  onSalir,
+}: {
+  listaId: string;
+  onSalir: () => void;
+}) {
   const [detalle, setDetalle] = useState<DetalleListaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [precioEnEdicion, setPrecioEnEdicion] = useState<Record<string, string>>({});
@@ -22,6 +28,8 @@ export default function ModoSupermercadoScreen({ listaId }: { listaId: string })
 
   const [supermercadoListaId, setSupermercadoListaId] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [confirmSalirVisible, setConfirmSalirVisible] = useState(false);
+  const [procesandoSalida, setProcesandoSalida] = useState(false);
 
   const fetchDetalle = useCallback(async () => {
     const { data, error } = await supabase
@@ -56,6 +64,36 @@ export default function ModoSupermercadoScreen({ listaId }: { listaId: string })
       else next.add(itemId);
       return next;
     });
+  };
+
+  // "Cancelar": no borra nada, solo saca la lista de estado 'activa' (queda
+  // como registro en el historial). "Eliminar": borra la lista de verdad —
+  // detalle_lista se va con ella por el ON DELETE CASCADE de su FK a
+  // listas_compra. Ninguna de las dos toca inventario_hogar/precios_historico
+  // de los ítems ya comprados: esos son compras reales, ya sucedieron.
+  const cancelarLista = async () => {
+    setProcesandoSalida(true);
+    const { error } = await supabase
+      .from('listas_compra')
+      .update({ estado: 'cancelada' })
+      .eq('id', listaId);
+    setProcesandoSalida(false);
+
+    if (!error) {
+      setConfirmSalirVisible(false);
+      onSalir();
+    }
+  };
+
+  const eliminarLista = async () => {
+    setProcesandoSalida(true);
+    const { error } = await supabase.from('listas_compra').delete().eq('id', listaId);
+    setProcesandoSalida(false);
+
+    if (!error) {
+      setConfirmSalirVisible(false);
+      onSalir();
+    }
   };
 
   // Al tildar el check: si cargó precio/descuento (acá o al agregar el
@@ -111,6 +149,16 @@ export default function ModoSupermercadoScreen({ listaId }: { listaId: string })
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Pressable
+          style={styles.botonSalir}
+          onPress={() => setConfirmSalirVisible(true)}
+          accessibilityLabel="Salir de la lista"
+        >
+          <Text style={styles.botonSalirTexto}>‹ Salir</Text>
+        </Pressable>
+      </View>
+
       <FlatList
         data={[...pendientes, ...comprados]}
         keyExtractor={(item) => item.id}
@@ -214,12 +262,57 @@ export default function ModoSupermercadoScreen({ listaId }: { listaId: string })
         listaId={listaId}
         supermercadoIdDefault={supermercadoListaId}
       />
+
+      <Modal
+        visible={confirmSalirVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmSalirVisible(false)}
+      >
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmSheet}>
+            <Text style={styles.confirmTitulo}>¿Qué querés hacer con esta lista?</Text>
+
+            <Pressable
+              style={[styles.confirmBoton, procesandoSalida && styles.botonDisabled]}
+              onPress={cancelarLista}
+              disabled={procesandoSalida}
+            >
+              <Text style={styles.confirmBotonTexto}>Cancelar lista y salir</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.confirmBotonDestructivo, procesandoSalida && styles.botonDisabled]}
+              onPress={eliminarLista}
+              disabled={procesandoSalida}
+            >
+              <Text style={styles.confirmBotonDestructivoTexto}>Eliminar lista y sus ítems</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.confirmVolver}
+              onPress={() => setConfirmSalirVisible(false)}
+              disabled={procesandoSalida}
+            >
+              <Text style={styles.confirmVolverTexto}>Volver</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingTop: 8,
+  },
+  botonSalir: { paddingVertical: 8, paddingHorizontal: 4 },
+  botonSalirTexto: { color: Colors.primary, fontWeight: '600', fontSize: 15 },
   listContent: { padding: 12, paddingBottom: 32 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   progreso: { fontSize: 14, color: Colors.textSecondary, marginBottom: 12, fontWeight: '600' },
@@ -282,4 +375,35 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   fabTexto: { color: Colors.white, fontSize: 28, fontWeight: '600', lineHeight: 30 },
+  botonDisabled: { opacity: 0.5 },
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  confirmSheet: {
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 20,
+    gap: 10,
+  },
+  confirmTitulo: { fontSize: 16, fontWeight: '700', marginBottom: 6 },
+  confirmBoton: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+  },
+  confirmBotonTexto: { color: Colors.textPrimary, fontWeight: '600' },
+  confirmBotonDestructivo: {
+    backgroundColor: Colors.error,
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+  },
+  confirmBotonDestructivoTexto: { color: Colors.white, fontWeight: '700' },
+  confirmVolver: { alignItems: 'center', paddingTop: 4 },
+  confirmVolverTexto: { color: Colors.textSecondary, fontWeight: '600' },
 });

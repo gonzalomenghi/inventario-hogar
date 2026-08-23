@@ -80,6 +80,12 @@ export default function ModoSupermercadoTab() {
       return;
     }
 
+    // Reset acá (no solo en el reset-on-close de un modal, porque esta
+    // pantalla nunca se desmonta): si no, al cancelar/eliminar la lista y
+    // volver a este estado vacío, el formulario de "Crear lista manual"
+    // queda expandido de la vez anterior en vez de mostrar el botón.
+    setCreandoManual(false);
+    setSupermercadoManual(null);
     setListaId(data.id);
   };
 
@@ -143,7 +149,7 @@ export default function ModoSupermercadoTab() {
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-      <ModoSupermercadoScreen listaId={listaId} />
+      <ModoSupermercadoScreen listaId={listaId} onSalir={() => setListaId(null)} />
     </SafeAreaView>
   );
 }
