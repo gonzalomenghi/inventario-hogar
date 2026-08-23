@@ -23,31 +23,57 @@ export type Database = {
     Tables: {
       catalogo_sepa_ref: {
         Row: {
-          categoria_sugerida:
-            | Database["public"]["Enums"]["categoria_producto"]
-            | null
+          categoria_sugerida_id: string | null
           codigo_barras: string
           marca: string | null
           nombre_sepa: string
           ultima_actualizacion: string
         }
         Insert: {
-          categoria_sugerida?:
-            | Database["public"]["Enums"]["categoria_producto"]
-            | null
+          categoria_sugerida_id?: string | null
           codigo_barras: string
           marca?: string | null
           nombre_sepa: string
           ultima_actualizacion?: string
         }
         Update: {
-          categoria_sugerida?:
-            | Database["public"]["Enums"]["categoria_producto"]
-            | null
+          categoria_sugerida_id?: string | null
           codigo_barras?: string
           marca?: string | null
           nombre_sepa?: string
           ultima_actualizacion?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalogo_sepa_ref_categoria_sugerida_id_fkey"
+            columns: ["categoria_sugerida_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categorias: {
+        Row: {
+          created_at: string
+          icono: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icono: string
+          id?: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icono?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -262,7 +288,7 @@ export type Database = {
       }
       productos_base: {
         Row: {
-          categoria: Database["public"]["Enums"]["categoria_producto"]
+          categoria_id: string
           codigo_barras: string | null
           created_at: string
           id: string
@@ -272,7 +298,7 @@ export type Database = {
           unidad_medida: string
         }
         Insert: {
-          categoria: Database["public"]["Enums"]["categoria_producto"]
+          categoria_id: string
           codigo_barras?: string | null
           created_at?: string
           id?: string
@@ -282,7 +308,7 @@ export type Database = {
           unidad_medida?: string
         }
         Update: {
-          categoria?: Database["public"]["Enums"]["categoria_producto"]
+          categoria_id?: string
           codigo_barras?: string | null
           created_at?: string
           id?: string
@@ -291,7 +317,15 @@ export type Database = {
           nombre?: string
           unidad_medida?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "productos_base_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       supermercados: {
         Row: {
@@ -385,7 +419,9 @@ export type Database = {
       buscar_producto_similar: {
         Args: { limite?: number; texto_busqueda: string }
         Returns: {
-          categoria: Database["public"]["Enums"]["categoria_producto"]
+          categoria_icono: string
+          categoria_id: string
+          categoria_nombre: string
           codigo_barras: string
           id: string
           marca: string
@@ -407,7 +443,6 @@ export type Database = {
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
-      categoria_producto: "alimentos" | "higiene" | "limpieza"
       estado_lista: "activa" | "completada" | "cancelada"
       fuente_precio: "manual" | "ocr_ticket" | "lista_compra"
       tipo_descuento:
@@ -543,7 +578,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      categoria_producto: ["alimentos", "higiene", "limpieza"],
       estado_lista: ["activa", "completada", "cancelada"],
       fuente_precio: ["manual", "ocr_ticket", "lista_compra"],
       tipo_descuento: [
@@ -562,7 +596,7 @@ export const Constants = {
 // sync con las columnas de arriba si cambia el schema).
 // ---------------------------------------------------------------------------
 
-export type CategoriaProducto = Database["public"]["Enums"]["categoria_producto"]
+export type Categoria = Tables<"categorias">
 export type EstadoLista = Database["public"]["Enums"]["estado_lista"]
 export type FuentePrecio = Database["public"]["Enums"]["fuente_precio"]
 export type TipoDescuento = Database["public"]["Enums"]["tipo_descuento"]
