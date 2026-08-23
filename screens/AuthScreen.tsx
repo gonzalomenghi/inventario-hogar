@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Colors } from '../constants/colors';
 import { supabase } from '../lib/supabase';
 
 export default function AuthScreen() {
@@ -92,21 +93,21 @@ const styles = StyleSheet.create({
   titulo: { fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 24 },
   input: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: Colors.border,
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
   },
-  error: { color: '#E5484D', textAlign: 'center' },
-  mensaje: { color: '#30A46C', textAlign: 'center' },
+  error: { color: Colors.error, textAlign: 'center' },
+  mensaje: { color: Colors.success, textAlign: 'center' },
   boton: {
-    backgroundColor: '#208AEF',
+    backgroundColor: Colors.primary,
     borderRadius: 8,
     padding: 14,
     alignItems: 'center',
     marginTop: 8,
   },
   botonDisabled: { opacity: 0.5 },
-  botonTexto: { color: '#fff', fontWeight: '700', fontSize: 16 },
-  link: { textAlign: 'center', color: '#208AEF', marginTop: 16 },
+  botonTexto: { color: Colors.white, fontWeight: '700', fontSize: 16 },
+  link: { textAlign: 'center', color: Colors.primary, marginTop: 16 },
 });

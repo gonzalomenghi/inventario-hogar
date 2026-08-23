@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Colors } from '../../constants/colors';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import DashboardAhorroScreen from '../../screens/DashboardAhorroScreen';
@@ -52,17 +53,17 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 16,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: Colors.backgroundMuted,
   },
-  email: { color: '#6B7280', fontSize: 13 },
+  email: { color: Colors.textSecondary, fontSize: 13 },
   boton: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: Colors.border,
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 20,
   },
-  botonTexto: { color: '#E5484D', fontWeight: '600' },
+  botonTexto: { color: Colors.error, fontWeight: '600' },
   fab: {
     position: 'absolute',
     right: 20,
@@ -70,7 +71,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#208AEF',
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

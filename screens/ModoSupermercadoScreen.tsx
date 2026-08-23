@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, TextInput } from 'react-native';
+import { Colors } from '../constants/colors';
 import { supabase } from '../lib/supabase';
 import type { DetalleListaItem } from '../types/database.types';
 
@@ -106,11 +107,11 @@ export default function ModoSupermercadoScreen({ listaId }: { listaId: string })
 const styles = StyleSheet.create({
   listContent: { padding: 12, paddingBottom: 32 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  progreso: { fontSize: 14, color: '#6B7280', marginBottom: 12, fontWeight: '600' },
+  progreso: { fontSize: 14, color: Colors.textSecondary, marginBottom: 12, fontWeight: '600' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     padding: 12,
     borderRadius: 12,
     marginBottom: 8,
@@ -121,21 +122,21 @@ const styles = StyleSheet.create({
     height: 26,
     borderRadius: 13,
     borderWidth: 2,
-    borderColor: '#D1D5DB',
+    borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
-  checkboxActivo: { backgroundColor: '#30A46C', borderColor: '#30A46C' },
-  checkmark: { color: '#fff', fontWeight: '700' },
+  checkboxActivo: { backgroundColor: Colors.success, borderColor: Colors.success },
+  checkmark: { color: Colors.white, fontWeight: '700' },
   info: { flex: 1 },
   nombre: { fontSize: 16, fontWeight: '600' },
   nombreComprado: { textDecorationLine: 'line-through' },
-  cantidad: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  cantidad: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
   inputPrecio: {
     width: 64,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: Colors.border,
     borderRadius: 8,
     padding: 6,
     textAlign: 'right',

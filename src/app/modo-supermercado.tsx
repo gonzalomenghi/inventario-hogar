@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Colors } from '../../constants/colors';
 import { supabase } from '../../lib/supabase';
 import ModoSupermercadoScreen from '../../screens/ModoSupermercadoScreen';
 
@@ -91,10 +92,10 @@ export default function ModoSupermercadoTab() {
 
 const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 12 },
-  mensaje: { textAlign: 'center', color: '#6B7280', fontSize: 15 },
-  error: { color: '#E5484D', textAlign: 'center' },
+  mensaje: { textAlign: 'center', color: Colors.textSecondary, fontSize: 15 },
+  error: { color: Colors.error, textAlign: 'center' },
   boton: {
-    backgroundColor: '#208AEF',
+    backgroundColor: Colors.primary,
     borderRadius: 8,
     paddingVertical: 12,
     paddingHorizontal: 24,
@@ -102,5 +103,5 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   botonDisabled: { opacity: 0.5 },
-  botonTexto: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  botonTexto: { color: Colors.white, fontWeight: '700', fontSize: 16 },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Colors } from '../constants/colors';
 import { useDashboardAhorro } from '../hooks/useDashboardAhorro';
 
 const formatoMoneda = (valor: number) =>
@@ -119,23 +120,23 @@ export default function DashboardAhorroScreen() {
 
 const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  errorText: { color: '#E5484D', textAlign: 'center' },
-  mensajeVacio: { textAlign: 'center', color: '#6B7280', fontSize: 15, lineHeight: 22 },
+  errorText: { color: Colors.error, textAlign: 'center' },
+  mensajeVacio: { textAlign: 'center', color: Colors.textSecondary, fontSize: 15, lineHeight: 22 },
   // paddingTop extra: en web la tab bar flota encima del contenido
   // (position: absolute en app-tabs.web.tsx), así que el primer elemento
   // necesita despejarla — otras pantallas no lo notan porque centran su
   // contenido, pero acá arranca pegado arriba.
   contenido: { padding: 16, paddingTop: 76, paddingBottom: 40, gap: 16 },
   tarjeta: {
-    backgroundColor: '#208AEF',
+    backgroundColor: Colors.primary,
     borderRadius: 16,
     padding: 20,
   },
-  tarjetaLabel: { color: '#DCEBFF', fontSize: 13, fontWeight: '600' },
-  tarjetaValor: { color: '#fff', fontSize: 32, fontWeight: '800', marginTop: 4 },
-  tarjetaSubtexto: { color: '#DCEBFF', fontSize: 13, marginTop: 4 },
+  tarjetaLabel: { color: Colors.primaryLight, fontSize: 13, fontWeight: '600' },
+  tarjetaValor: { color: Colors.white, fontSize: 32, fontWeight: '800', marginTop: 4 },
+  tarjetaSubtexto: { color: Colors.primaryLight, fontSize: 13, marginTop: 4 },
   seccion: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     borderRadius: 12,
     padding: 16,
     gap: 10,
@@ -144,13 +145,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     textTransform: 'uppercase',
-    color: '#6B7280',
+    color: Colors.textSecondary,
     marginBottom: 4,
   },
   filaSimple: { flexDirection: 'row', justifyContent: 'space-between' },
   filaDoble: { gap: 2 },
-  filaTexto: { fontSize: 15, fontWeight: '600', color: '#111827' },
-  filaSubtexto: { fontSize: 13, color: '#6B7280' },
-  textoSubio: { color: '#E5484D' },
-  textoBajo: { color: '#30A46C' },
+  filaTexto: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  filaSubtexto: { fontSize: 13, color: Colors.textSecondary },
+  textoSubio: { color: Colors.error },
+  textoBajo: { color: Colors.success },
 });

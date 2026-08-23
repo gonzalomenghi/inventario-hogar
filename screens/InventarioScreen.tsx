@@ -9,13 +9,14 @@ import {
 } from 'react-native';
 import AgregarProductoModal from './AgregarProductoModal';
 import EscanearTicketModal from './EscanearTicketModal';
+import { Colors } from '../constants/colors';
 import { useInventario } from '../hooks/useInventario';
 import type { CategoriaProducto, EstadoStock, InventarioItem } from '../types/database.types';
 
 const COLOR_SEMAFORO: Record<EstadoStock, string> = {
-  rojo: '#E5484D',
-  amarillo: '#F5A623',
-  verde: '#30A46C',
+  rojo: Colors.error,
+  amarillo: Colors.warning,
+  verde: Colors.success,
 };
 
 const LABEL_CATEGORIA: Record<CategoriaProducto, string> = {
@@ -141,12 +142,12 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   listContent: { paddingBottom: 32 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  errorText: { color: '#E5484D', textAlign: 'center' },
+  errorText: { color: Colors.error, textAlign: 'center' },
   sectionHeader: {
     fontSize: 14,
     fontWeight: '700',
     textTransform: 'uppercase',
-    color: '#6B7280',
+    color: Colors.textSecondary,
     paddingHorizontal: 16,
     paddingTop: 20,
     paddingBottom: 8,
@@ -154,7 +155,7 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     marginHorizontal: 12,
     marginBottom: 8,
     padding: 12,
@@ -168,17 +169,17 @@ const styles = StyleSheet.create({
   semaforoDot: { width: 12, height: 12, borderRadius: 6, marginRight: 12 },
   info: { flex: 1 },
   nombre: { fontSize: 16, fontWeight: '600' },
-  cantidad: { fontSize: 13, color: '#6B7280', marginTop: 2 },
+  cantidad: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
   controles: { flexDirection: 'row', gap: 8 },
   botonControl: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: Colors.backgroundMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  botonTexto: { fontSize: 18, fontWeight: '700', color: '#111827' },
+  botonTexto: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
   fab: {
     position: 'absolute',
     right: 20,
@@ -186,7 +187,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#208AEF',
+    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -195,7 +196,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
-  fabTexto: { color: '#fff', fontSize: 28, fontWeight: '600', lineHeight: 30 },
+  fabTexto: { color: Colors.white, fontSize: 28, fontWeight: '600', lineHeight: 30 },
   fabTicket: {
     position: 'absolute',
     right: 20,
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

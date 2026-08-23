@@ -110,6 +110,17 @@ Migración `supabase/migrations/20260822211818_fase5_dashboard_ahorro.sql`: tres
 - Nativo (iOS/Android) sin probar en esta sesión (sin capacidad de build nativo acá): usa `expo-file-system`'s `File.arrayBuffer()` + un encoder base64 a mano (`arrayBufferABase64` en el modal), porque la API nueva de `expo-file-system` no trae un helper de base64 y `DocumentPickerAsset.base64` solo existe en la plataforma web.
 - `app.json` tiene el plugin `expo-image-picker` con los textos de permiso de cámara/fotos en español — hace falta para builds nativos, no aplica en web.
 
+## 4.4 Fase 6 — Refinamiento UI/UX (EN CURSO)
+
+### Paleta de colores consolidada (COMPLETO)
+`constants/colors.ts` — objeto `Colors` semántico (`primary`, `primaryLight`, `error`, `warning`, `success`, `textPrimary`, `textSecondary`, `border`, `backgroundMuted`, `white`). Antes cada pantalla repetía los mismos hex a mano (`#208AEF` duplicado en 6+ archivos); ahora las 7 pantallas/modales bajo `screens/` y `src/app/` (`InventarioScreen`, `DashboardAhorroScreen`, `ModoSupermercadoScreen`, `AuthScreen`, `EscanearTicketModal`, `AgregarProductoModal`, `modo-supermercado.tsx`, `historial.tsx`) importan de ahí. `shadowColor: '#000'` se dejó igual en todos lados (convención universal de sombra, no parte de la paleta semántica).
+
+**Importante — no confundir con `src/constants/theme.ts`:** ese es el tema claro/oscuro del scaffold de Expo (`Colors.light`/`Colors.dark`), usado solo por `src/components/*` (`ThemedView`, `ThemedText`, la chrome de la tab bar en `app-tabs.tsx`/`.web.tsx`). Es un sistema aparte, no conectado a `constants/colors.ts` — las pantallas reales de la app no lo usan. Reconciliarlos queda pendiente si se retoma la tab bar.
+
+### Pendiente en Fase 6
+- [ ] Scanner de código de barras (cámara → matching contra `codigo_barras` en `productos_base`).
+- [ ] Microinteracciones (transiciones, feedback al tocar, animaciones de carga).
+
 ## 5. Roadmap completo (fases futuras)
 
 1. ~~Fase 1 — Modelado de datos~~ ✅
@@ -117,7 +128,7 @@ Migración `supabase/migrations/20260822211818_fase5_dashboard_ahorro.sql`: tres
 3. ~~Fase 3 — Auto-generación de listas~~ ✅ (ver sección 4.1)
 4. ~~Fase 4 — OCR de tickets~~ ✅ (ver sección 4.3)
 5. ~~Fase 5 — Dashboard de ahorro~~ ✅ (ver sección 4.2)
-6. Fase 6 — Refinamiento UI/UX: diseño visual, microinteracciones, scanner de código de barras.
+6. Fase 6 — Refinamiento UI/UX: diseño visual, microinteracciones, scanner de código de barras. 🔄 en curso (ver sección 4.4)
 
 ## 6. Convenciones del proyecto
 
