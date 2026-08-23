@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
+import PressableFeedback from './PressableFeedback';
 import { Colors } from '../constants/colors';
 import { useSupermercados } from '../hooks/useSupermercados';
 
@@ -61,7 +62,7 @@ export default function SupermercadoPicker({
       ) : (
         <View style={styles.chips}>
           {supermercados.map((s) => (
-            <Pressable
+            <PressableFeedback
               key={s.id}
               style={[styles.chip, value === s.id && styles.chipActivo]}
               onPress={() => onChange(s.id)}
@@ -69,12 +70,12 @@ export default function SupermercadoPicker({
               <Text style={[styles.chipTexto, value === s.id && styles.chipTextoActivo]}>
                 {s.nombre}
               </Text>
-            </Pressable>
+            </PressableFeedback>
           ))}
 
-          <Pressable style={styles.chipNueva} onPress={abrirAlta}>
+          <PressableFeedback style={styles.chipNueva} onPress={abrirAlta}>
             <Text style={styles.chipNuevaTexto}>+</Text>
-          </Pressable>
+          </PressableFeedback>
         </View>
       )}
 
@@ -94,10 +95,10 @@ export default function SupermercadoPicker({
           {errorForm && <Text style={styles.error}>{errorForm}</Text>}
 
           <View style={styles.formBotones}>
-            <Pressable style={styles.botonCancelar} onPress={cancelarForm} disabled={guardando}>
+            <PressableFeedback style={styles.botonCancelar} onPress={cancelarForm} disabled={guardando}>
               <Text style={styles.botonCancelarTexto}>Cancelar</Text>
-            </Pressable>
-            <Pressable
+            </PressableFeedback>
+            <PressableFeedback
               style={[styles.botonGuardar, guardando && styles.botonDisabled]}
               onPress={guardarForm}
               disabled={guardando}
@@ -107,7 +108,7 @@ export default function SupermercadoPicker({
               ) : (
                 <Text style={styles.botonGuardarTexto}>Guardar</Text>
               )}
-            </Pressable>
+            </PressableFeedback>
           </View>
         </View>
       )}

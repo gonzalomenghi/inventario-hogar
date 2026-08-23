@@ -157,9 +157,20 @@ Cero migraciones — RLS+GRANT ya cubrían delete en `listas_compra`/`inventario
 - **Bug real encontrado probando el flujo completo** (crear lista manual → salir → crear otra): el estado local `creandoManual`/`supermercadoManual` de `modo-supermercado.tsx` nunca se reseteaba después de crear una lista, así que al cancelar/eliminar y volver a la pantalla vacía, el formulario de "Crear lista manual" aparecía ya expandido (con el supermercado anterior precargado) en vez de mostrar el botón — porque este componente nunca se desmonta, solo cambia qué renderiza según `listaId`. Se resetean esos dos estados justo después de crear la lista con éxito.
 - **`screens/DetalleProductoModal.tsx`**: botón "Eliminar del inventario" con confirmación inline (no un `Modal` anidado — este ya es un `Modal`). Borra solo la fila de `inventario_hogar` del usuario, nunca `productos_base` (catálogo compartido, referenciado por `precios_historico` y otras listas).
 
+### Microinteracciones: feedback al tocar, loading gaps, transiciones puntuales (COMPLETO)
+Relevamiento previo: de 48 `Pressable` en toda la app, solo 1 (la tab bar web, `app-tabs.web.tsx`) tenía feedback visual al tocar — el resto era estático. Las animaciones de carga ya estaban bien cubiertas en casi todos lados (spinner por botón), salvo 2 gaps reales.
+
+- **`screens/PressableFeedback.tsx`** (nuevo): wrapper de `Pressable` que agrega opacidad (`0.6`) al tocar, drop-in replacement (acepta `style` como objeto o función, igual que `Pressable`). Reemplaza `Pressable` en los 12 archivos que lo usaban (todo `screens/` + `src/app/modo-supermercado.tsx` + `src/app/historial.tsx`) — no se tocó `app-tabs.web.tsx` (ya tenía su propio feedback) ni `app-tabs.tsx` (usa `NativeTabs`, no `Pressable`).
+- **Gap real 1 — `src/app/historial.tsx`**: "Cerrar sesión" no tenía ningún feedback mientras `supabase.auth.signOut()` estaba en vuelo. Ahora tiene spinner + disabled, con fallback a rehabilitar el botón si `signOut()` falla (si sale bien, el gate de sesión en `_layout.tsx` desmonta la pantalla solo, no hace falta resetear el estado).
+- **Gap real 2 — `screens/ModoSupermercadoScreen.tsx`**: el modal de salir de lista tenía `disabled` pero nunca mostraba spinner en "Cancelar lista y salir"/"Eliminar lista y sus ítems". Como los dos botones comparten un solo modal, el estado pasó de `boolean` a `'cancelar' | 'eliminar' | null` para que el spinner aparezca solo en el botón que efectivamente se tocó.
+- **Transiciones puntuales con Reanimated** (ya instalado — `react-native-reanimated` 4.5.1 —, hasta ahora solo usado en el splash/logo inicial):
+  - `InventarioScreen.tsx`: el chevron de las categorías colapsables (antes un swap de carácter `▾`/`▸`) pasa a ser un solo glifo con rotación animada (`useSharedValue` + `useAnimatedStyle` + `withTiming`) — se extrajo a un componente `SeccionHeader` propio porque un render-prop plano (`renderSectionHeader`) no puede usar hooks de forma consistente entre renders. Las filas de producto (aparecen/desaparecen de verdad vía el truco `data: []` de `SectionList`, no son solo `opacity:0`) se envuelven en `Animated.View` con `entering={FadeIn}`/`exiting={FadeOut}`/`layout={LinearTransition}`.
+  - `ModoSupermercadoScreen.tsx`: el panel de descuento/supermercado que aparece al tocar "⋯" en una fila pasa de `View` a `Animated.View` con el mismo patrón.
+  - Alcance acotado a estos dos puntos a propósito — los modales siguen con `animationType="slide"/"fade"` nativo de RN, sin tocar.
+- **Nota de testing real:** RN Web's `<Modal visible={false}>` no desmonta sus hijos (solo lo oculta) — un modal ya cerrado deja sus componentes (con cualquier texto/chip duplicado, ej. el "+" de un `CategoriaPicker`) presentes pero invisibles en el DOM. No es un bug de la app, pero rompe cualquier test/selector que asuma que solo hay una instancia visible de un texto repetido — hay que filtrar por `isVisible()`, no asumir un índice fijo.
+
 ### Pendiente en Fase 6
 - [ ] Scanner de código de barras (cámara → matching contra `codigo_barras` en `productos_base`).
-- [ ] Microinteracciones (transiciones, feedback al tocar, animaciones de carga).
 
 ## 5. Roadmap completo (fases futuras)
 

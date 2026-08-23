@@ -1,15 +1,23 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   SectionList,
   View,
   Text,
-  Pressable,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import Animated, {
+  FadeIn,
+  FadeOut,
+  LinearTransition,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import AgregarProductoModal from './AgregarProductoModal';
 import DetalleProductoModal from './DetalleProductoModal';
 import EscanearTicketModal from './EscanearTicketModal';
+import PressableFeedback from './PressableFeedback';
 import { Colors } from '../constants/colors';
 import { useCategorias } from '../hooks/useCategorias';
 import { useInventario } from '../hooks/useInventario';
@@ -77,17 +85,12 @@ export default function InventarioScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           renderSectionHeader={({ section }) => (
-            <Pressable
-              style={styles.sectionHeader}
-              onPress={() => toggleColapsada(section.id)}
-            >
-              <Text style={styles.sectionHeaderTexto}>
-                {section.title} ({section.count})
-              </Text>
-              <Text style={styles.sectionHeaderChevron}>
-                {colapsadas.has(section.id) ? '▸' : '▾'}
-              </Text>
-            </Pressable>
+            <SeccionHeader
+              titulo={section.title}
+              cantidad={section.count}
+              colapsada={colapsadas.has(section.id)}
+              onToggle={() => toggleColapsada(section.id)}
+            />
           )}
           renderItem={({ item }) => (
             <ItemInventario item={item} onAjustar={ajustarCantidad} onDetalle={setDetalleItem} />
@@ -95,21 +98,21 @@ export default function InventarioScreen() {
         />
       )}
 
-      <Pressable
+      <PressableFeedback
         style={styles.fabTicket}
         onPress={() => setModalTicketVisible(true)}
         accessibilityLabel="Escanear ticket"
       >
         <Text style={styles.fabTicketTexto}>📷</Text>
-      </Pressable>
+      </PressableFeedback>
 
-      <Pressable
+      <PressableFeedback
         style={styles.fab}
         onPress={() => setModalVisible(true)}
         accessibilityLabel="Agregar producto"
       >
         <Text style={styles.fabTexto}>+</Text>
-      </Pressable>
+      </PressableFeedback>
 
       <AgregarProductoModal
         visible={modalVisible}
@@ -133,6 +136,40 @@ export default function InventarioScreen() {
   );
 }
 
+// Componente propio (no una función inline en renderSectionHeader) porque
+// necesita su propio useSharedValue por sección — un render-prop plano no
+// puede usar hooks de forma consistente entre renders.
+function SeccionHeader({
+  titulo,
+  cantidad,
+  colapsada,
+  onToggle,
+}: {
+  titulo: string;
+  cantidad: number;
+  colapsada: boolean;
+  onToggle: () => void;
+}) {
+  const rotacion = useSharedValue(colapsada ? -90 : 0);
+
+  useEffect(() => {
+    rotacion.value = withTiming(colapsada ? -90 : 0, { duration: 200 });
+  }, [colapsada, rotacion]);
+
+  const estiloChevron = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotacion.value}deg` }],
+  }));
+
+  return (
+    <PressableFeedback style={styles.sectionHeader} onPress={onToggle}>
+      <Text style={styles.sectionHeaderTexto}>
+        {titulo} ({cantidad})
+      </Text>
+      <Animated.Text style={[styles.sectionHeaderChevron, estiloChevron]}>▾</Animated.Text>
+    </PressableFeedback>
+  );
+}
+
 function ItemInventario({
   item,
   onAjustar,
@@ -143,34 +180,40 @@ function ItemInventario({
   onDetalle: (item: InventarioItem) => void;
 }) {
   return (
-    <Pressable style={styles.card} onPress={() => onDetalle(item)}>
-      <View style={[styles.semaforoDot, { backgroundColor: COLOR_SEMAFORO[item.estado_stock] }]} />
+    <Animated.View
+      entering={FadeIn.duration(150)}
+      exiting={FadeOut.duration(150)}
+      layout={LinearTransition.duration(200)}
+    >
+      <PressableFeedback style={styles.card} onPress={() => onDetalle(item)}>
+        <View style={[styles.semaforoDot, { backgroundColor: COLOR_SEMAFORO[item.estado_stock] }]} />
 
-      <View style={styles.info}>
-        <Text style={styles.nombre}>{item.producto?.nombre}</Text>
-        <Text style={styles.cantidad}>
-          {item.cantidad_actual} {item.unidad_medida}
-          {item.fecha_vencimiento ? ` · vence ${item.fecha_vencimiento}` : ''}
-        </Text>
-      </View>
+        <View style={styles.info}>
+          <Text style={styles.nombre}>{item.producto?.nombre}</Text>
+          <Text style={styles.cantidad}>
+            {item.cantidad_actual} {item.unidad_medida}
+            {item.fecha_vencimiento ? ` · vence ${item.fecha_vencimiento}` : ''}
+          </Text>
+        </View>
 
-      <View style={styles.controles}>
-        <Pressable
-          style={styles.botonControl}
-          onPress={() => onAjustar(item.id, -1)}
-          accessibilityLabel={`Restar unidad a ${item.producto?.nombre}`}
-        >
-          <Text style={styles.botonTexto}>−</Text>
-        </Pressable>
-        <Pressable
-          style={styles.botonControl}
-          onPress={() => onAjustar(item.id, 1)}
-          accessibilityLabel={`Sumar unidad a ${item.producto?.nombre}`}
-        >
-          <Text style={styles.botonTexto}>+</Text>
-        </Pressable>
-      </View>
-    </Pressable>
+        <View style={styles.controles}>
+          <PressableFeedback
+            style={styles.botonControl}
+            onPress={() => onAjustar(item.id, -1)}
+            accessibilityLabel={`Restar unidad a ${item.producto?.nombre}`}
+          >
+            <Text style={styles.botonTexto}>−</Text>
+          </PressableFeedback>
+          <PressableFeedback
+            style={styles.botonControl}
+            onPress={() => onAjustar(item.id, 1)}
+            accessibilityLabel={`Sumar unidad a ${item.producto?.nombre}`}
+          >
+            <Text style={styles.botonTexto}>+</Text>
+          </PressableFeedback>
+        </View>
+      </PressableFeedback>
+    </Animated.View>
   );
 }
 

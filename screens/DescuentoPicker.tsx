@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import PressableFeedback from './PressableFeedback';
 import { Colors } from '../constants/colors';
 import type { TipoDescuento } from '../types/database.types';
 
@@ -33,7 +34,7 @@ export default function DescuentoPicker({
     <View>
       <View style={styles.chips}>
         {OPCIONES.map((op) => (
-          <Pressable
+          <PressableFeedback
             key={op.valor}
             style={[styles.chip, tipo === op.valor && styles.chipActivo]}
             onPress={() => onChangeTipo(op.valor)}
@@ -41,7 +42,7 @@ export default function DescuentoPicker({
             <Text style={[styles.chipTexto, tipo === op.valor && styles.chipTextoActivo]}>
               {op.label}
             </Text>
-          </Pressable>
+          </PressableFeedback>
         ))}
       </View>
 

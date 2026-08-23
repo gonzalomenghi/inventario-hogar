@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
+import PressableFeedback from './PressableFeedback';
 import { Colors } from '../constants/colors';
 import { useCategorias } from '../hooks/useCategorias';
 import type { Categoria } from '../types/database.types';
@@ -91,7 +92,7 @@ export default function CategoriaPicker({
         <View style={styles.chips}>
           {categorias.map((cat) => (
             <View key={cat.id} style={styles.chipConLapiz}>
-              <Pressable
+              <PressableFeedback
                 style={[styles.chip, value === cat.id && styles.chipActivo]}
                 onPress={() => onChange(cat.id)}
                 onLongPress={() => abrirEdicion(cat)}
@@ -99,20 +100,20 @@ export default function CategoriaPicker({
                 <Text style={[styles.chipTexto, value === cat.id && styles.chipTextoActivo]}>
                   {cat.icono} {cat.nombre}
                 </Text>
-              </Pressable>
-              <Pressable
+              </PressableFeedback>
+              <PressableFeedback
                 style={styles.lapiz}
                 onPress={() => abrirEdicion(cat)}
                 accessibilityLabel={`Editar categoría ${cat.nombre}`}
               >
                 <Text style={styles.lapizTexto}>✏️</Text>
-              </Pressable>
+              </PressableFeedback>
             </View>
           ))}
 
-          <Pressable style={styles.chipNueva} onPress={abrirAlta}>
+          <PressableFeedback style={styles.chipNueva} onPress={abrirAlta}>
             <Text style={styles.chipNuevaTexto}>+</Text>
-          </Pressable>
+          </PressableFeedback>
         </View>
       )}
 
@@ -141,10 +142,10 @@ export default function CategoriaPicker({
           {errorForm && <Text style={styles.error}>{errorForm}</Text>}
 
           <View style={styles.formBotones}>
-            <Pressable style={styles.botonCancelar} onPress={cancelarForm} disabled={guardando}>
+            <PressableFeedback style={styles.botonCancelar} onPress={cancelarForm} disabled={guardando}>
               <Text style={styles.botonCancelarTexto}>Cancelar</Text>
-            </Pressable>
-            <Pressable
+            </PressableFeedback>
+            <PressableFeedback
               style={[styles.botonGuardar, guardando && styles.botonDisabled]}
               onPress={guardarForm}
               disabled={guardando}
@@ -154,7 +155,7 @@ export default function CategoriaPicker({
               ) : (
                 <Text style={styles.botonGuardarTexto}>Guardar</Text>
               )}
-            </Pressable>
+            </PressableFeedback>
           </View>
         </View>
       )}

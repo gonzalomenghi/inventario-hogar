@@ -6,13 +6,13 @@ import {
   ActivityIndicator,
   Image,
   Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import PressableFeedback from './PressableFeedback';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../hooks/useAuth';
 import { useEscanearTicket } from '../hooks/useEscanearTicket';
@@ -318,9 +318,9 @@ export default function EscanearTicketModal({
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.titulo}>Escanear ticket</Text>
-            <Pressable onPress={onClose}>
+            <PressableFeedback onPress={onClose}>
               <Text style={styles.cerrar}>Cerrar</Text>
-            </Pressable>
+            </PressableFeedback>
           </View>
 
           <ScrollView keyboardShouldPersistTaps="handled">
@@ -334,15 +334,15 @@ export default function EscanearTicketModal({
                   </View>
                 ) : (
                   <View style={styles.botonesFoto}>
-                    <Pressable style={styles.botonSecundario} onPress={() => elegirImagen(true)}>
+                    <PressableFeedback style={styles.botonSecundario} onPress={() => elegirImagen(true)}>
                       <Text style={styles.botonSecundarioTexto}>📷 Sacar foto</Text>
-                    </Pressable>
-                    <Pressable style={styles.botonSecundario} onPress={() => elegirImagen(false)}>
+                    </PressableFeedback>
+                    <PressableFeedback style={styles.botonSecundario} onPress={() => elegirImagen(false)}>
                       <Text style={styles.botonSecundarioTexto}>🖼️ Elegir de galería</Text>
-                    </Pressable>
-                    <Pressable style={styles.botonSecundario} onPress={elegirPDF}>
+                    </PressableFeedback>
+                    <PressableFeedback style={styles.botonSecundario} onPress={elegirPDF}>
                       <Text style={styles.botonSecundarioTexto}>📄 Elegir PDF</Text>
-                    </Pressable>
+                    </PressableFeedback>
                   </View>
                 )}
 
@@ -352,7 +352,7 @@ export default function EscanearTicketModal({
 
                 {imagenBase64 && (
                   <>
-                    <Pressable
+                    <PressableFeedback
                       style={[styles.boton, procesando && styles.botonDisabled]}
                       onPress={procesar}
                       disabled={procesando}
@@ -362,8 +362,8 @@ export default function EscanearTicketModal({
                       ) : (
                         <Text style={styles.botonTexto}>Procesar ticket</Text>
                       )}
-                    </Pressable>
-                    <Pressable
+                    </PressableFeedback>
+                    <PressableFeedback
                       onPress={() => {
                         setImagenUri(null);
                         setImagenBase64(null);
@@ -371,7 +371,7 @@ export default function EscanearTicketModal({
                       }}
                     >
                       <Text style={styles.link}>Elegir otro archivo</Text>
-                    </Pressable>
+                    </PressableFeedback>
                   </>
                 )}
               </>
@@ -398,12 +398,12 @@ export default function EscanearTicketModal({
                 <Text style={styles.label}>Ítems detectados ({items.length})</Text>
                 {items.map((item, i) => (
                   <View key={i} style={styles.filaItem}>
-                    <Pressable
+                    <PressableFeedback
                       style={[styles.checkbox, item.incluido && styles.checkboxActivo]}
                       onPress={() => actualizarItem(i, { incluido: !item.incluido })}
                     >
                       {item.incluido && <Text style={styles.checkmark}>✓</Text>}
-                    </Pressable>
+                    </PressableFeedback>
 
                     <View style={styles.itemCampos}>
                       <TextInput
@@ -433,7 +433,7 @@ export default function EscanearTicketModal({
 
                 {error && <Text style={styles.error}>{error}</Text>}
 
-                <Pressable
+                <PressableFeedback
                   style={[styles.boton, guardando && styles.botonDisabled]}
                   onPress={confirmarYGuardar}
                   disabled={guardando}
@@ -443,7 +443,7 @@ export default function EscanearTicketModal({
                   ) : (
                     <Text style={styles.botonTexto}>Sumar al inventario y guardar precios</Text>
                   )}
-                </Pressable>
+                </PressableFeedback>
               </View>
             )}
           </ScrollView>

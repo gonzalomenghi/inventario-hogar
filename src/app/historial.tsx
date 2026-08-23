@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '../../constants/colors';
@@ -7,6 +7,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import DashboardAhorroScreen from '../../screens/DashboardAhorroScreen';
 import EscanearTicketModal from '../../screens/EscanearTicketModal';
+import PressableFeedback from '../../screens/PressableFeedback';
 
 export default function HistorialTab() {
   const { session } = useAuth();
@@ -15,19 +16,28 @@ export default function HistorialTab() {
   // pero escanear un ticket pasa por un modal sin salir de la ruta — no hay
   // refoco que dispare eso. Se fuerza el remount acá específicamente para ese caso.
   const [refrescarKey, setRefrescarKey] = useState(0);
+  const [cerrandoSesion, setCerrandoSesion] = useState(false);
+
+  const cerrarSesion = async () => {
+    setCerrandoSesion(true);
+    const { error } = await supabase.auth.signOut();
+    // Si falla (ej. sin red), volver a habilitar el botón — si sale bien,
+    // el gate de sesión en _layout.tsx desmonta esta pantalla solo.
+    if (error) setCerrandoSesion(false);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <View style={{ flex: 1 }}>
         <DashboardAhorroScreen key={refrescarKey} />
 
-        <Pressable
+        <PressableFeedback
           style={styles.fab}
           onPress={() => setModalVisible(true)}
           accessibilityLabel="Escanear ticket"
         >
           <Text style={styles.fabTexto}>📷</Text>
-        </Pressable>
+        </PressableFeedback>
 
         <EscanearTicketModal
           visible={modalVisible}
@@ -39,9 +49,17 @@ export default function HistorialTab() {
       {session && (
         <View style={styles.cuenta}>
           <Text style={styles.email}>{session.user.email}</Text>
-          <Pressable style={styles.boton} onPress={() => supabase.auth.signOut()}>
-            <Text style={styles.botonTexto}>Cerrar sesión</Text>
-          </Pressable>
+          <PressableFeedback
+            style={[styles.boton, cerrandoSesion && styles.botonDisabled]}
+            onPress={cerrarSesion}
+            disabled={cerrandoSesion}
+          >
+            {cerrandoSesion ? (
+              <ActivityIndicator color={Colors.error} />
+            ) : (
+              <Text style={styles.botonTexto}>Cerrar sesión</Text>
+            )}
+          </PressableFeedback>
         </View>
       )}
     </SafeAreaView>
@@ -65,6 +83,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   botonTexto: { color: Colors.error, fontWeight: '600' },
+  botonDisabled: { opacity: 0.5 },
   fab: {
     position: 'absolute',
     right: 20,

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import CategoriaPicker from './CategoriaPicker';
+import PressableFeedback from './PressableFeedback';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../hooks/useAuth';
 import { useBuscarProductoSimilar } from '../hooks/useBuscarProductoSimilar';
@@ -163,9 +163,9 @@ export default function AgregarProductoModal({
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.titulo}>Agregar producto</Text>
-            <Pressable onPress={onClose}>
+            <PressableFeedback onPress={onClose}>
               <Text style={styles.cerrar}>Cerrar</Text>
-            </Pressable>
+            </PressableFeedback>
           </View>
 
           <ScrollView keyboardShouldPersistTaps="handled">
@@ -182,7 +182,7 @@ export default function AgregarProductoModal({
                 {buscando && <ActivityIndicator style={styles.spinner} />}
 
                 {resultados.map((r, i) => (
-                  <Pressable
+                  <PressableFeedback
                     key={`${r.origen}-${r.id ?? r.codigo_barras ?? r.nombre}-${i}`}
                     style={styles.resultado}
                     onPress={() => elegirResultado(r)}
@@ -196,11 +196,11 @@ export default function AgregarProductoModal({
                         <Text style={styles.badgeSepaTexto}>catálogo</Text>
                       </View>
                     )}
-                  </Pressable>
+                  </PressableFeedback>
                 ))}
 
                 {query.trim().length >= 2 && !buscando && (
-                  <Pressable
+                  <PressableFeedback
                     style={styles.crearNuevo}
                     onPress={() => {
                       setNombreProducto(query.trim());
@@ -210,7 +210,7 @@ export default function AgregarProductoModal({
                     <Text style={styles.crearNuevoTexto}>
                       + Crear "{query.trim()}" como producto nuevo
                     </Text>
-                  </Pressable>
+                  </PressableFeedback>
                 )}
               </>
             )}
@@ -276,7 +276,7 @@ export default function AgregarProductoModal({
             {error && <Text style={styles.error}>{error}</Text>}
 
             {pasoCantidad && (
-              <Pressable
+              <PressableFeedback
                 style={[styles.boton, guardando && styles.botonDisabled]}
                 onPress={crearProductoYAgregar}
                 disabled={guardando}
@@ -286,7 +286,7 @@ export default function AgregarProductoModal({
                 ) : (
                   <Text style={styles.botonTexto}>Agregar al inventario</Text>
                 )}
-              </Pressable>
+              </PressableFeedback>
             )}
           </ScrollView>
         </View>
