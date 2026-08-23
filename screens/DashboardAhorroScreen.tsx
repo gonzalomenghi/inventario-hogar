@@ -122,11 +122,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { color: Colors.error, textAlign: 'center' },
   mensajeVacio: { textAlign: 'center', color: Colors.textSecondary, fontSize: 15, lineHeight: 22 },
-  // paddingTop extra: en web la tab bar flota encima del contenido
-  // (position: absolute en app-tabs.web.tsx), así que el primer elemento
-  // necesita despejarla — otras pantallas no lo notan porque centran su
-  // contenido, pero acá arranca pegado arriba.
-  contenido: { padding: 16, paddingTop: 76, paddingBottom: 40, gap: 16 },
+  contenido: { padding: 16, paddingBottom: 40, gap: 16 },
   tarjeta: {
     backgroundColor: Colors.primary,
     borderRadius: 16,

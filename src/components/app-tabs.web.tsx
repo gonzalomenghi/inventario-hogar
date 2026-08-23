@@ -16,7 +16,17 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 export default function AppTabs() {
   return (
     <Tabs>
-      <TabSlot style={{ height: '100%' }} />
+      {/*
+        La tab bar es position: absolute (flota encima del contenido, ver
+        tabListContainer más abajo) para lograr el look de pill flotante.
+        Eso significa que el contenido de cada pantalla arranca debajo de
+        ella en el DOM, así que sin este paddingTop el primer elemento de
+        cualquier pantalla queda tapado (y sus clicks interceptados por la
+        tab bar) — encontrado originalmente en DashboardAhorroScreen,
+        parcheado ahí con un paddingTop local; centralizado acá para que
+        ninguna pantalla nueva tenga que repetirlo.
+      */}
+      <TabSlot style={{ height: '100%', paddingTop: 76 }} />
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="index" href="/" asChild>

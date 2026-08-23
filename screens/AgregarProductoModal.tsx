@@ -9,20 +9,13 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import CategoriaPicker from './CategoriaPicker';
 import { Colors } from '../constants/colors';
 import { useAuth } from '../hooks/useAuth';
 import { useBuscarProductoSimilar } from '../hooks/useBuscarProductoSimilar';
 import type { ResultadoBusquedaProducto } from '../hooks/useBuscarProductoSimilar';
 import { supabase } from '../lib/supabase';
-import type { CategoriaProducto, TablesInsert } from '../types/database.types';
-
-const LABEL_CATEGORIA: Record<CategoriaProducto, string> = {
-  alimentos: 'Alimentos',
-  higiene: 'Higiene',
-  limpieza: 'Limpieza',
-};
-
-const CATEGORIAS: CategoriaProducto[] = ['alimentos', 'higiene', 'limpieza'];
+import type { TablesInsert } from '../types/database.types';
 
 // Producto ya existente en productos_base, elegido de la búsqueda: se
 // agrega directo a inventario_hogar, sin crear nada nuevo.
@@ -54,7 +47,7 @@ export default function AgregarProductoModal({
   const [creandoNuevo, setCreandoNuevo] = useState(false);
   const [nombreProducto, setNombreProducto] = useState('');
 
-  const [categoria, setCategoria] = useState<CategoriaProducto>('alimentos');
+  const [categoriaId, setCategoriaId] = useState<string | null>(null);
   const [unidadMedida, setUnidadMedida] = useState('unidad');
   const [codigoBarras, setCodigoBarras] = useState('');
   const [marca, setMarca] = useState('');
@@ -73,7 +66,7 @@ export default function AgregarProductoModal({
       setProductoExistente(null);
       setCreandoNuevo(false);
       setNombreProducto('');
-      setCategoria('alimentos');
+      setCategoriaId(null);
       setUnidadMedida('unidad');
       setCodigoBarras('');
       setMarca('');
@@ -93,7 +86,7 @@ export default function AgregarProductoModal({
     // 'sepa': sugerencia del catálogo de referencia, todavía no existe en
     // productos_base — prellena el formulario de creación con lo que sabemos.
     setNombreProducto(r.nombre);
-    setCategoria(r.categoria);
+    setCategoriaId(r.categoria_id ?? null);
     setUnidadMedida(r.unidad_medida ?? 'unidad');
     setCodigoBarras(r.codigo_barras ?? '');
     setMarca(r.marca ?? '');
@@ -108,9 +101,15 @@ export default function AgregarProductoModal({
     let producto = productoExistente;
 
     if (!producto) {
+      if (!categoriaId) {
+        setError('Elegí una categoría.');
+        setGuardando(false);
+        return;
+      }
+
       const nuevoProducto: TablesInsert<'productos_base'> = {
         nombre: nombreProducto.trim(),
-        categoria,
+        categoria_id: categoriaId,
         unidad_medida: unidadMedida.trim() || 'unidad',
         codigo_barras: codigoBarras.trim() || null,
         marca: marca.trim() || null,
@@ -190,7 +189,7 @@ export default function AgregarProductoModal({
                   >
                     <View style={styles.resultadoInfo}>
                       <Text style={styles.resultadoNombre}>{r.nombre}</Text>
-                      <Text style={styles.resultadoCategoria}>{LABEL_CATEGORIA[r.categoria]}</Text>
+                      <Text style={styles.resultadoCategoria}>{r.categoria_nombre ?? '—'}</Text>
                     </View>
                     {r.origen === 'sepa' && (
                       <View style={styles.badgeSepa}>
@@ -219,24 +218,7 @@ export default function AgregarProductoModal({
             {creandoNuevo && !productoExistente && (
               <View style={styles.seccion}>
                 <Text style={styles.label}>Categoría</Text>
-                <View style={styles.chips}>
-                  {CATEGORIAS.map((cat) => (
-                    <Pressable
-                      key={cat}
-                      style={[styles.chip, categoria === cat && styles.chipActivo]}
-                      onPress={() => setCategoria(cat)}
-                    >
-                      <Text
-                        style={[
-                          styles.chipTexto,
-                          categoria === cat && styles.chipTextoActivo,
-                        ]}
-                      >
-                        {LABEL_CATEGORIA[cat]}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
+                <CategoriaPicker value={categoriaId} onChange={setCategoriaId} />
 
                 <Text style={styles.label}>Unidad de medida</Text>
                 <TextInput
@@ -362,17 +344,6 @@ const styles = StyleSheet.create({
   crearNuevoTexto: { color: Colors.primary, fontWeight: '600' },
   seccion: { marginTop: 4 },
   label: { fontSize: 13, color: Colors.textSecondary, marginBottom: 6, marginTop: 4 },
-  chips: { flexDirection: 'row', gap: 8, marginBottom: 4 },
-  chip: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-  },
-  chipActivo: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  chipTexto: { color: Colors.textPrimary, fontWeight: '600' },
-  chipTextoActivo: { color: Colors.white },
   productoElegido: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
   error: { color: Colors.error, textAlign: 'center', marginTop: 8 },
   boton: {

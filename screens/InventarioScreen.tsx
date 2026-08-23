@@ -8,10 +8,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import AgregarProductoModal from './AgregarProductoModal';
+import DetalleProductoModal from './DetalleProductoModal';
 import EscanearTicketModal from './EscanearTicketModal';
 import { Colors } from '../constants/colors';
+import { useCategorias } from '../hooks/useCategorias';
 import { useInventario } from '../hooks/useInventario';
-import type { CategoriaProducto, EstadoStock, InventarioItem } from '../types/database.types';
+import type { EstadoStock, InventarioItem } from '../types/database.types';
 
 const COLOR_SEMAFORO: Record<EstadoStock, string> = {
   rojo: Colors.error,
@@ -19,26 +21,21 @@ const COLOR_SEMAFORO: Record<EstadoStock, string> = {
   verde: Colors.success,
 };
 
-const LABEL_CATEGORIA: Record<CategoriaProducto, string> = {
-  alimentos: 'Alimentos',
-  higiene: 'Higiene',
-  limpieza: 'Limpieza',
-};
-
 export default function InventarioScreen() {
   const { items, loading, error, ajustarCantidad, refetch } = useInventario();
+  const { categorias } = useCategorias();
   const [modalVisible, setModalVisible] = useState(false);
   const [modalTicketVisible, setModalTicketVisible] = useState(false);
+  const [detalleItem, setDetalleItem] = useState<InventarioItem | null>(null);
 
   const secciones = useMemo(() => {
-    const categorias: CategoriaProducto[] = ['alimentos', 'higiene', 'limpieza'];
     return categorias
       .map((cat) => ({
-        title: LABEL_CATEGORIA[cat],
-        data: items.filter((it) => it.producto?.categoria === cat),
+        title: `${cat.icono} ${cat.nombre}`,
+        data: items.filter((it) => it.producto?.categoria_id === cat.id),
       }))
       .filter((sec) => sec.data.length > 0);
-  }, [items]);
+  }, [items, categorias]);
 
   return (
     <View style={styles.container}>
@@ -63,7 +60,7 @@ export default function InventarioScreen() {
             <Text style={styles.sectionHeader}>{section.title}</Text>
           )}
           renderItem={({ item }) => (
-            <ItemInventario item={item} onAjustar={ajustarCantidad} />
+            <ItemInventario item={item} onAjustar={ajustarCantidad} onDetalle={setDetalleItem} />
           )}
         />
       )}
@@ -95,6 +92,13 @@ export default function InventarioScreen() {
         onClose={() => setModalTicketVisible(false)}
         onGuardado={refetch}
       />
+
+      <DetalleProductoModal
+        visible={!!detalleItem}
+        item={detalleItem}
+        onClose={() => setDetalleItem(null)}
+        onGuardado={refetch}
+      />
     </View>
   );
 }
@@ -102,12 +106,14 @@ export default function InventarioScreen() {
 function ItemInventario({
   item,
   onAjustar,
+  onDetalle,
 }: {
   item: InventarioItem;
   onAjustar: (id: string, delta: number) => void;
+  onDetalle: (item: InventarioItem) => void;
 }) {
   return (
-    <View style={styles.card}>
+    <Pressable style={styles.card} onPress={() => onDetalle(item)}>
       <View style={[styles.semaforoDot, { backgroundColor: COLOR_SEMAFORO[item.estado_stock] }]} />
 
       <View style={styles.info}>
@@ -134,7 +140,7 @@ function ItemInventario({
           <Text style={styles.botonTexto}>+</Text>
         </Pressable>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
