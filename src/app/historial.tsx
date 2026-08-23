@@ -11,8 +11,9 @@ import EscanearTicketModal from '../../screens/EscanearTicketModal';
 export default function HistorialTab() {
   const { session } = useAuth();
   const [modalVisible, setModalVisible] = useState(false);
-  // Fuerza el remount del dashboard después de guardar precios nuevos,
-  // para que useDashboardAhorro vuelva a hacer fetch (no tiene Realtime).
+  // useDashboardAhorro ya refetchea solo al volver a esta tab (useFocusEffect),
+  // pero escanear un ticket pasa por un modal sin salir de la ruta — no hay
+  // refoco que dispare eso. Se fuerza el remount acá específicamente para ese caso.
   const [refrescarKey, setRefrescarKey] = useState(0);
 
   return (

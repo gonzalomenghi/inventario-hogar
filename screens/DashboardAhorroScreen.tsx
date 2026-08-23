@@ -35,7 +35,6 @@ export default function DashboardAhorroScreen() {
     );
   }
 
-  const mesActual = gastoMensual[0];
   const sinDatos = gastoMensual.length === 0;
 
   if (sinDatos) {
@@ -51,25 +50,20 @@ export default function DashboardAhorroScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.contenido}>
-      <View style={styles.tarjeta}>
-        <Text style={styles.tarjetaLabel}>Gasto de {formatoMes(mesActual.mes)}</Text>
-        <Text style={styles.tarjetaValor}>{formatoMoneda(mesActual.gasto_total)}</Text>
-        <Text style={styles.tarjetaSubtexto}>
-          {mesActual.cantidad_compras} {mesActual.cantidad_compras === 1 ? 'compra' : 'compras'}
-        </Text>
-      </View>
-
-      {gastoMensual.length > 1 && (
-        <View style={styles.seccion}>
-          <Text style={styles.seccionTitulo}>Meses anteriores</Text>
-          {gastoMensual.slice(1).map((g) => (
-            <View key={g.mes} style={styles.filaSimple}>
+      <View style={styles.seccion}>
+        <Text style={styles.seccionTitulo}>Gasto por mes</Text>
+        {gastoMensual.map((g) => (
+          <View key={g.mes} style={styles.filaMes}>
+            <View>
               <Text style={styles.filaTexto}>{formatoMes(g.mes)}</Text>
-              <Text style={styles.filaTexto}>{formatoMoneda(g.gasto_total)}</Text>
+              <Text style={styles.filaSubtexto}>
+                {g.cantidad_compras} {g.cantidad_compras === 1 ? 'compra' : 'compras'}
+              </Text>
             </View>
-          ))}
-        </View>
-      )}
+            <Text style={styles.filaMonto}>{formatoMoneda(g.gasto_total)}</Text>
+          </View>
+        ))}
+      </View>
 
       {mejorSupermercado.length > 0 && (
         <View style={styles.seccion}>
@@ -89,12 +83,7 @@ export default function DashboardAhorroScreen() {
         <View style={styles.seccion}>
           <Text style={styles.seccionTitulo}>Tendencia de precios</Text>
           {tendencias.map((t) => {
-            const delta =
-              t.precio_anterior != null
-                ? ((t.precio_actual - t.precio_anterior) / t.precio_anterior) * 100
-                : null;
-            const subioColor = delta != null && delta > 0;
-            const bajoColor = delta != null && delta < 0;
+            const delta = ((t.precio_actual - t.precio_anterior) / t.precio_anterior) * 100;
 
             return (
               <View key={t.producto_id} style={styles.filaDoble}>
@@ -102,12 +91,12 @@ export default function DashboardAhorroScreen() {
                 <Text
                   style={[
                     styles.filaSubtexto,
-                    subioColor && styles.textoSubio,
-                    bajoColor && styles.textoBajo,
+                    delta > 0 && styles.textoSubio,
+                    delta < 0 && styles.textoBajo,
                   ]}
                 >
-                  {formatoMoneda(t.precio_actual)}
-                  {delta != null && ` · ${delta > 0 ? '+' : ''}${delta.toFixed(0)}% vs. anterior`}
+                  {formatoMoneda(t.precio_actual)} · {delta > 0 ? '+' : ''}
+                  {delta.toFixed(0)}% vs. anterior
                 </Text>
               </View>
             );
@@ -123,14 +112,6 @@ const styles = StyleSheet.create({
   errorText: { color: Colors.error, textAlign: 'center' },
   mensajeVacio: { textAlign: 'center', color: Colors.textSecondary, fontSize: 15, lineHeight: 22 },
   contenido: { padding: 16, paddingBottom: 40, gap: 16 },
-  tarjeta: {
-    backgroundColor: Colors.primary,
-    borderRadius: 16,
-    padding: 20,
-  },
-  tarjetaLabel: { color: Colors.primaryLight, fontSize: 13, fontWeight: '600' },
-  tarjetaValor: { color: Colors.white, fontSize: 32, fontWeight: '800', marginTop: 4 },
-  tarjetaSubtexto: { color: Colors.primaryLight, fontSize: 13, marginTop: 4 },
   seccion: {
     backgroundColor: Colors.white,
     borderRadius: 12,
@@ -144,10 +125,16 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginBottom: 4,
   },
-  filaSimple: { flexDirection: 'row', justifyContent: 'space-between' },
   filaDoble: { gap: 2 },
   filaTexto: { fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
   filaSubtexto: { fontSize: 13, color: Colors.textSecondary },
+  filaMes: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  filaMonto: { fontSize: 16, fontWeight: '700', color: Colors.textPrimary },
   textoSubio: { color: Colors.error },
   textoBajo: { color: Colors.success },
 });
