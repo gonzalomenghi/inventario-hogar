@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import PressableFeedback from './PressableFeedback';
 import { Colors } from '../constants/colors';
 import { supabase } from '../lib/supabase';
 
@@ -65,7 +65,7 @@ export default function AuthScreen() {
       {error && <Text style={styles.error}>{error}</Text>}
       {mensaje && <Text style={styles.mensaje}>{mensaje}</Text>}
 
-      <Pressable
+      <PressableFeedback
         style={[styles.boton, (loading || !email || !password) && styles.botonDisabled]}
         onPress={submit}
         disabled={loading || !email || !password}
@@ -77,13 +77,13 @@ export default function AuthScreen() {
             {modo === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
           </Text>
         )}
-      </Pressable>
+      </PressableFeedback>
 
-      <Pressable onPress={() => setModo(modo === 'login' ? 'registro' : 'login')}>
+      <PressableFeedback onPress={() => setModo(modo === 'login' ? 'registro' : 'login')}>
         <Text style={styles.link}>
           {modo === 'login' ? '¿No tenés cuenta? Creá una' : '¿Ya tenés cuenta? Iniciá sesión'}
         </Text>
-      </Pressable>
+      </PressableFeedback>
     </View>
   );
 }

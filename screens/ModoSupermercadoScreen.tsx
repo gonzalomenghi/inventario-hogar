@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, ActivityIndicator, TextInput, Modal } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TextInput, Modal } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import AgregarItemListaModal from './AgregarItemListaModal';
 import DescuentoPicker from './DescuentoPicker';
+import PressableFeedback from './PressableFeedback';
 import SupermercadoPicker from './SupermercadoPicker';
 import { Colors } from '../constants/colors';
 import { supabase } from '../lib/supabase';
@@ -11,6 +13,8 @@ interface DescuentoEdicion {
   tipo: TipoDescuento;
   valor: string;
 }
+
+type AccionSalida = 'cancelar' | 'eliminar' | null;
 
 export default function ModoSupermercadoScreen({
   listaId,
@@ -29,7 +33,10 @@ export default function ModoSupermercadoScreen({
   const [supermercadoListaId, setSupermercadoListaId] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [confirmSalirVisible, setConfirmSalirVisible] = useState(false);
-  const [procesandoSalida, setProcesandoSalida] = useState(false);
+  // Los dos botones del confirm comparten un solo modal, pero cada uno
+  // necesita su propio spinner — con un booleano ambos se verían "en
+  // curso" a la vez aunque solo se haya tocado uno.
+  const [accionSalida, setAccionSalida] = useState<AccionSalida>(null);
 
   const fetchDetalle = useCallback(async () => {
     const { data, error } = await supabase
@@ -72,12 +79,12 @@ export default function ModoSupermercadoScreen({
   // listas_compra. Ninguna de las dos toca inventario_hogar/precios_historico
   // de los ítems ya comprados: esos son compras reales, ya sucedieron.
   const cancelarLista = async () => {
-    setProcesandoSalida(true);
+    setAccionSalida('cancelar');
     const { error } = await supabase
       .from('listas_compra')
       .update({ estado: 'cancelada' })
       .eq('id', listaId);
-    setProcesandoSalida(false);
+    setAccionSalida(null);
 
     if (!error) {
       setConfirmSalirVisible(false);
@@ -86,9 +93,9 @@ export default function ModoSupermercadoScreen({
   };
 
   const eliminarLista = async () => {
-    setProcesandoSalida(true);
+    setAccionSalida('eliminar');
     const { error } = await supabase.from('listas_compra').delete().eq('id', listaId);
-    setProcesandoSalida(false);
+    setAccionSalida(null);
 
     if (!error) {
       setConfirmSalirVisible(false);
@@ -150,13 +157,13 @@ export default function ModoSupermercadoScreen({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable
+        <PressableFeedback
           style={styles.botonSalir}
           onPress={() => setConfirmSalirVisible(true)}
           accessibilityLabel="Salir de la lista"
         >
           <Text style={styles.botonSalirTexto}>‹ Salir</Text>
-        </Pressable>
+        </PressableFeedback>
       </View>
 
       <FlatList
@@ -180,13 +187,13 @@ export default function ModoSupermercadoScreen({
           return (
             <View style={[styles.row, item.comprado && styles.rowComprado]}>
               <View style={styles.filaPrincipal}>
-                <Pressable
+                <PressableFeedback
                   style={[styles.checkbox, item.comprado && styles.checkboxActivo]}
                   onPress={() => !item.comprado && marcarComprado(item)}
                   accessibilityLabel={`Marcar comprado: ${item.producto?.nombre}`}
                 >
                   {item.comprado && <Text style={styles.checkmark}>✓</Text>}
-                </Pressable>
+                </PressableFeedback>
 
                 <View style={styles.info}>
                   <Text style={[styles.nombre, item.comprado && styles.nombreComprado]}>
@@ -208,19 +215,24 @@ export default function ModoSupermercadoScreen({
                         setPrecioEnEdicion((prev) => ({ ...prev, [item.id]: t }))
                       }
                     />
-                    <Pressable
+                    <PressableFeedback
                       style={styles.botonExpandir}
                       onPress={() => toggleExpandido(item.id)}
                       accessibilityLabel={`Más opciones para ${item.producto?.nombre}`}
                     >
                       <Text style={styles.botonExpandirTexto}>{abierto ? '︿' : '⋯'}</Text>
-                    </Pressable>
+                    </PressableFeedback>
                   </>
                 )}
               </View>
 
               {!item.comprado && abierto && (
-                <View style={styles.expansion}>
+                <Animated.View
+                  style={styles.expansion}
+                  entering={FadeIn.duration(150)}
+                  exiting={FadeOut.duration(150)}
+                  layout={LinearTransition.duration(200)}
+                >
                   <Text style={styles.label}>Descuento</Text>
                   <DescuentoPicker
                     tipo={descuento.tipo}
@@ -240,20 +252,20 @@ export default function ModoSupermercadoScreen({
                       setSupermercadoEnEdicion((prev) => ({ ...prev, [item.id]: id }))
                     }
                   />
-                </View>
+                </Animated.View>
               )}
             </View>
           );
         }}
       />
 
-      <Pressable
+      <PressableFeedback
         style={styles.fab}
         onPress={() => setModalVisible(true)}
         accessibilityLabel="Agregar producto a la lista"
       >
         <Text style={styles.fabTexto}>+</Text>
-      </Pressable>
+      </PressableFeedback>
 
       <AgregarItemListaModal
         visible={modalVisible}
@@ -273,29 +285,37 @@ export default function ModoSupermercadoScreen({
           <View style={styles.confirmSheet}>
             <Text style={styles.confirmTitulo}>¿Qué querés hacer con esta lista?</Text>
 
-            <Pressable
-              style={[styles.confirmBoton, procesandoSalida && styles.botonDisabled]}
+            <PressableFeedback
+              style={[styles.confirmBoton, accionSalida !== null && styles.botonDisabled]}
               onPress={cancelarLista}
-              disabled={procesandoSalida}
+              disabled={accionSalida !== null}
             >
-              <Text style={styles.confirmBotonTexto}>Cancelar lista y salir</Text>
-            </Pressable>
+              {accionSalida === 'cancelar' ? (
+                <ActivityIndicator color={Colors.textPrimary} />
+              ) : (
+                <Text style={styles.confirmBotonTexto}>Cancelar lista y salir</Text>
+              )}
+            </PressableFeedback>
 
-            <Pressable
-              style={[styles.confirmBotonDestructivo, procesandoSalida && styles.botonDisabled]}
+            <PressableFeedback
+              style={[styles.confirmBotonDestructivo, accionSalida !== null && styles.botonDisabled]}
               onPress={eliminarLista}
-              disabled={procesandoSalida}
+              disabled={accionSalida !== null}
             >
-              <Text style={styles.confirmBotonDestructivoTexto}>Eliminar lista y sus ítems</Text>
-            </Pressable>
+              {accionSalida === 'eliminar' ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.confirmBotonDestructivoTexto}>Eliminar lista y sus ítems</Text>
+              )}
+            </PressableFeedback>
 
-            <Pressable
+            <PressableFeedback
               style={styles.confirmVolver}
               onPress={() => setConfirmSalirVisible(false)}
-              disabled={procesandoSalida}
+              disabled={accionSalida !== null}
             >
               <Text style={styles.confirmVolverTexto}>Volver</Text>
-            </Pressable>
+            </PressableFeedback>
           </View>
         </View>
       </Modal>

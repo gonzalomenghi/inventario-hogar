@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '../../constants/colors';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import ModoSupermercadoScreen from '../../screens/ModoSupermercadoScreen';
+import PressableFeedback from '../../screens/PressableFeedback';
 import SupermercadoPicker from '../../screens/SupermercadoPicker';
 
 export default function ModoSupermercadoTab() {
@@ -105,7 +106,7 @@ export default function ModoSupermercadoTab() {
 
           {error && <Text style={styles.error}>{error}</Text>}
 
-          <Pressable
+          <PressableFeedback
             style={[styles.boton, creando && styles.botonDisabled]}
             onPress={crearListaConStockBajo}
             disabled={creando}
@@ -115,18 +116,18 @@ export default function ModoSupermercadoTab() {
             ) : (
               <Text style={styles.botonTexto}>Crear lista de compras</Text>
             )}
-          </Pressable>
+          </PressableFeedback>
 
           {!creandoManual ? (
-            <Pressable style={styles.botonSecundario} onPress={() => setCreandoManual(true)}>
+            <PressableFeedback style={styles.botonSecundario} onPress={() => setCreandoManual(true)}>
               <Text style={styles.botonSecundarioTexto}>Crear lista manual</Text>
-            </Pressable>
+            </PressableFeedback>
           ) : (
             <View style={styles.formManual}>
               <Text style={styles.label}>Elegí el supermercado</Text>
               <SupermercadoPicker value={supermercadoManual} onChange={setSupermercadoManual} />
 
-              <Pressable
+              <PressableFeedback
                 style={[
                   styles.boton,
                   (creando || !supermercadoManual) && styles.botonDisabled,
@@ -139,7 +140,7 @@ export default function ModoSupermercadoTab() {
                 ) : (
                   <Text style={styles.botonTexto}>Crear lista</Text>
                 )}
-              </Pressable>
+              </PressableFeedback>
             </View>
           )}
         </View>

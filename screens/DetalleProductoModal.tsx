@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import CategoriaPicker from './CategoriaPicker';
+import PressableFeedback from './PressableFeedback';
 import { Colors } from '../constants/colors';
 import { supabase } from '../lib/supabase';
 import type { InventarioItem } from '../types/database.types';
@@ -133,9 +133,9 @@ export default function DetalleProductoModal({
         <View style={styles.sheet}>
           <View style={styles.header}>
             <Text style={styles.titulo}>Detalle del producto</Text>
-            <Pressable onPress={onClose}>
+            <PressableFeedback onPress={onClose}>
               <Text style={styles.cerrar}>Cerrar</Text>
-            </Pressable>
+            </PressableFeedback>
           </View>
 
           <ScrollView keyboardShouldPersistTaps="handled">
@@ -155,7 +155,7 @@ export default function DetalleProductoModal({
               {errorCategoria && <Text style={styles.error}>{errorCategoria}</Text>}
               {categoriaGuardada && <Text style={styles.ok}>Categoría guardada.</Text>}
 
-              <Pressable
+              <PressableFeedback
                 style={[styles.boton, guardandoCategoria && styles.botonDisabled]}
                 onPress={guardarCategoria}
                 disabled={guardandoCategoria || !categoriaId}
@@ -165,7 +165,7 @@ export default function DetalleProductoModal({
                 ) : (
                   <Text style={styles.botonTexto}>Guardar categoría</Text>
                 )}
-              </Pressable>
+              </PressableFeedback>
             </View>
 
             <View style={styles.seccion}>
@@ -188,7 +188,7 @@ export default function DetalleProductoModal({
               {errorStock && <Text style={styles.error}>{errorStock}</Text>}
               {stockGuardado && <Text style={styles.ok}>Cambios guardados.</Text>}
 
-              <Pressable
+              <PressableFeedback
                 style={[styles.boton, guardandoStock && styles.botonDisabled]}
                 onPress={guardarStock}
                 disabled={guardandoStock}
@@ -198,33 +198,33 @@ export default function DetalleProductoModal({
                 ) : (
                   <Text style={styles.botonTexto}>Guardar cambios</Text>
                 )}
-              </Pressable>
+              </PressableFeedback>
             </View>
 
             <View style={styles.seccion}>
               {errorEliminar && <Text style={styles.error}>{errorEliminar}</Text>}
 
               {!confirmandoEliminar ? (
-                <Pressable
+                <PressableFeedback
                   style={styles.botonEliminar}
                   onPress={() => setConfirmandoEliminar(true)}
                 >
                   <Text style={styles.botonEliminarTexto}>Eliminar del inventario</Text>
-                </Pressable>
+                </PressableFeedback>
               ) : (
                 <View style={styles.confirmEliminar}>
                   <Text style={styles.confirmEliminarTexto}>
                     ¿Eliminar "{item.producto?.nombre}" de tu inventario?
                   </Text>
                   <View style={styles.confirmEliminarBotones}>
-                    <Pressable
+                    <PressableFeedback
                       style={styles.confirmCancelar}
                       onPress={() => setConfirmandoEliminar(false)}
                       disabled={eliminando}
                     >
                       <Text style={styles.confirmCancelarTexto}>Cancelar</Text>
-                    </Pressable>
-                    <Pressable
+                    </PressableFeedback>
+                    <PressableFeedback
                       style={[styles.confirmEliminarBoton, eliminando && styles.botonDisabled]}
                       onPress={eliminarDelInventario}
                       disabled={eliminando}
@@ -234,7 +234,7 @@ export default function DetalleProductoModal({
                       ) : (
                         <Text style={styles.confirmEliminarBotonTexto}>Sí, eliminar</Text>
                       )}
-                    </Pressable>
+                    </PressableFeedback>
                   </View>
                 </View>
               )}
