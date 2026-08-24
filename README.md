@@ -95,7 +95,9 @@ types/database.types.ts   Tipos generados desde el schema de Supabase + alias de
 
 supabase/
   migrations/              Migraciones SQL (Supabase CLI) — el schema completo vive acá
-  functions/                Edge Functions: procesar-ticket (OCR), sync-catalogo-sepa (stub)
+  functions/                Edge Functions: procesar-ticket (OCR)
+
+scripts/sync-catalogo-sepa.mjs  Sync del catálogo SEPA/Precios Claros (corre vía GitHub Actions, ver .github/workflows/)
 
 assets/                   Íconos, splash, y el kit de marca (assets/brand-alacena/)
 ```
