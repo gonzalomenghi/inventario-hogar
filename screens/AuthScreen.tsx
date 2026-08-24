@@ -43,8 +43,11 @@ export default function AuthScreen() {
 
   return (
     <View style={styles.container}>
-      <Image source={require('../assets/images/logo.png')} style={styles.logo} />
-      <Text style={styles.titulo}>AlacenaApp</Text>
+      <Image
+        source={require('../assets/images/logo-horizontal.png')}
+        style={styles.logo}
+        resizeMode="contain"
+      />
 
       <TextInput
         style={styles.input}
@@ -92,8 +95,7 @@ export default function AuthScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  logo: { width: 88, height: 88, alignSelf: 'center', marginBottom: 4 },
-  titulo: { fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 24 },
+  logo: { width: 240, height: 60, alignSelf: 'center', marginBottom: 28 },
   input: {
     borderWidth: 1,
     borderColor: Colors.border,

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 160">
+  <g transform="translate(20,16) scale(2)">
+    <rect x="8" y="8" width="48" height="48" rx="14" fill="none" stroke="#c1552c" stroke-width="4.5" stroke-linejoin="round"/>
+    <line x1="8" y1="34" x2="56" y2="34" stroke="#c1552c" stroke-width="4.5" stroke-linecap="round"/>
+    <rect x="16" y="40" width="8" height="12" rx="2.5" fill="#c1552c"/>
+    <rect x="28" y="35" width="8" height="17" rx="2.5" fill="#c1552c"/>
+    <rect x="40" y="42" width="8" height="10" rx="2.5" fill="#c1552c"/>
+  </g>
+  <text x="178" y="103" font-family="Quicksand, system-ui, sans-serif" font-weight="700" font-size="64" letter-spacing="-1" fill="#2a1e1a">Alacena<tspan font-weight="500" font-size="36" fill="#c1552c" dy="0">App</tspan></text>
+</svg>
