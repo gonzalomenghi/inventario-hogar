@@ -135,7 +135,8 @@ export default function AgregarItemListaModal({
     const mostrarValor =
       tipoDescuento === 'porcentaje' ||
       tipoDescuento === 'monto_fijo' ||
-      tipoDescuento === 'descuento_2da_unidad';
+      tipoDescuento === 'descuento_2da_unidad' ||
+      tipoDescuento === 'nxm';
 
     const nuevoItem: TablesInsert<'detalle_lista'> = {
       lista_id: listaId,

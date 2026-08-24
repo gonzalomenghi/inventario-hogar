@@ -1,10 +1,3 @@
-// Generado con:
-//   npx supabase gen types typescript --project-id qktpohqtwyvwypgohyda
-// No editar las secciones "Database"/"Tables" a mano — volver a correr el
-// comando después de cualquier cambio de schema. Los alias de conveniencia
-// al final del archivo sí son a mano y hay que mantenerlos si cambian
-// nombres de columnas.
-
 export type Json =
   | string
   | number
@@ -14,10 +7,30 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.15"
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -85,6 +98,7 @@ export type Database = {
           created_at: string
           id: string
           lista_id: string
+          precio_estimado: number | null
           precio_final: number | null
           precio_unitario: number | null
           producto_id: string
@@ -100,6 +114,7 @@ export type Database = {
           created_at?: string
           id?: string
           lista_id: string
+          precio_estimado?: number | null
           precio_final?: number | null
           precio_unitario?: number | null
           producto_id: string
@@ -115,6 +130,7 @@ export type Database = {
           created_at?: string
           id?: string
           lista_id?: string
+          precio_estimado?: number | null
           precio_final?: number | null
           precio_unitario?: number | null
           producto_id?: string
@@ -432,6 +448,14 @@ export type Database = {
           unidad_medida: string
         }[]
       }
+      fn_calcular_precio_final: {
+        Args: {
+          p_precio_unitario: number
+          p_tipo_descuento: Database["public"]["Enums"]["tipo_descuento"]
+          p_valor_descuento: number
+        }
+        Returns: number
+      }
       fn_generar_lista_compra: { Args: never; Returns: string }
       fn_generar_lista_compra_interna: {
         Args: { p_user_id: string }
@@ -452,6 +476,7 @@ export type Database = {
         | "descuento_2da_unidad"
         | "porcentaje"
         | "monto_fijo"
+        | "nxm"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -577,6 +602,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       estado_lista: ["activa", "completada", "cancelada"],
@@ -587,6 +615,7 @@ export const Constants = {
         "descuento_2da_unidad",
         "porcentaje",
         "monto_fijo",
+        "nxm",
       ],
     },
   },

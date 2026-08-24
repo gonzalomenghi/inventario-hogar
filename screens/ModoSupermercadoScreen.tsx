@@ -146,6 +146,24 @@ export default function ModoSupermercadoScreen({
   const pendientes = detalle.filter((d) => !d.comprado);
   const comprados = detalle.filter((d) => d.comprado);
 
+  // precio_final (ítems ya comprados) y precio_estimado (pendientes, columna
+  // generada en Postgres con la misma fórmula de descuento) ya vienen
+  // calculados desde la base — acá solo se suman, no se reimplementa la
+  // fórmula de descuento en el frontend. Los ítems sin precio cargado
+  // todavía no entran a la suma, pero sí se cuentan para avisar que el
+  // total es parcial.
+  let totalEstimado = 0;
+  let itemsSinPrecio = 0;
+  for (const item of detalle) {
+    const precio = item.comprado ? item.precio_final : item.precio_estimado;
+    if (precio == null) {
+      itemsSinPrecio += 1;
+      continue;
+    }
+    const cantidad = item.comprado ? item.cantidad_comprada ?? item.cantidad_solicitada : item.cantidad_solicitada;
+    totalEstimado += precio * cantidad;
+  }
+
   if (loading) {
     return (
       <View style={styles.centered}>
@@ -171,9 +189,20 @@ export default function ModoSupermercadoScreen({
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <Text style={styles.progreso}>
-            {comprados.length} / {detalle.length} comprados
-          </Text>
+          <View style={styles.resumen}>
+            <Text style={styles.progreso}>
+              {comprados.length} / {detalle.length} comprados
+            </Text>
+            <Text style={styles.total}>
+              Total estimado: ${totalEstimado.toFixed(2)}
+              {itemsSinPrecio > 0 && (
+                <Text style={styles.totalNota}>
+                  {' '}
+                  ({itemsSinPrecio} sin precio cargado)
+                </Text>
+              )}
+            </Text>
+          </View>
         }
         renderItem={({ item }) => {
           const abierto = expandido.has(item.id);
@@ -335,7 +364,10 @@ const styles = StyleSheet.create({
   botonSalirTexto: { color: Colors.primary, fontWeight: '600', fontSize: 15 },
   listContent: { padding: 12, paddingBottom: 32 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  progreso: { fontSize: 14, color: Colors.textSecondary, marginBottom: 12, fontWeight: '600' },
+  resumen: { marginBottom: 12 },
+  progreso: { fontSize: 14, color: Colors.textSecondary, fontWeight: '600' },
+  total: { fontSize: 16, color: Colors.textPrimary, fontWeight: '700', marginTop: 2 },
+  totalNota: { fontSize: 12, color: Colors.textSecondary, fontWeight: '400' },
   row: {
     backgroundColor: Colors.white,
     padding: 10,
