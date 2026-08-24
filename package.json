@@ -2,6 +2,9 @@
   "name": "inventario-hogar",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "dependencies": {
     "@expo/ui": "~57.0.12",
     "@react-native-async-storage/async-storage": "2.2.0",

@@ -148,6 +148,18 @@ El proyecto de Supabase real tiene la integración GitHub↔Supabase activa: **c
 
 Las Edge Functions (`supabase/functions/`) se despliegan por separado con `npx supabase functions deploy <nombre>` y requieren sus propios secrets (ver `npx supabase secrets set`).
 
+## Despliegue del frontend (Vercel)
+
+El frontend (versión web) se publica en Vercel como sitio estático a partir del export de Expo (`expo.web.output: "single"`, SPA). La configuración vive en `vercel.json`:
+
+- `buildCommand`: `npx expo export --platform web`
+- `outputDirectory`: `dist`
+- `rewrites`: todas las rutas caen a `index.html` (necesario para que el ruteo de Expo Router funcione al navegar directo a `/modo-supermercado` o `/historial`, no solo desde la SPA ya cargada).
+
+Las variables `EXPO_PUBLIC_SUPABASE_URL`/`EXPO_PUBLIC_SUPABASE_ANON_KEY` se inyectan en build time (van embebidas en el bundle, como cualquier variable `EXPO_PUBLIC_*`) — hay que cargarlas como Environment Variables del proyecto en Vercel, no alcanza con el `.env` local (que no se commitea). Ver el paso a paso completo más abajo.
+
+Esto publica solo la versión web. Los builds nativos (iOS/Android) siguen un camino aparte vía EAS, no relacionado con Vercel.
+
 ## Roadmap
 
 1. ✅ Fase 1 — Modelado de datos
