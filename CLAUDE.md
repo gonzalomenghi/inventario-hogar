@@ -12,6 +12,8 @@ App web/mobile para:
 
 **Principio rector del producto:** máxima simplicidad visual, mínima carga manual. Toda lógica de negocio (semáforo de stock, cálculo de precio con descuento, actualización de inventario al comprar) vive en el backend (Supabase/Postgres), no en el frontend.
 
+**Nombre público de la app: "AlacenaApp"** (`app.json` → `expo.name`). El `slug` (`inventario-hogar`) y el `scheme` de deep linking (`inventariohogar`) se dejaron sin tocar a propósito — cambiarlos afecta la asociación del proyecto EAS y cualquier build/deep link ya emitido, y no era parte de lo pedido (solo el nombre visible + el logo). El nombre de la carpeta/repo y `package.json`'s `name` tampoco se tocaron (identificadores técnicos, no lo que ve el usuario).
+
 ## 2. Stack
 
 - **Backend:** Supabase (PostgreSQL + Auth + RLS + Triggers + Realtime).
@@ -168,6 +170,13 @@ Relevamiento previo: de 48 `Pressable` en toda la app, solo 1 (la tab bar web, `
   - `ModoSupermercadoScreen.tsx`: el panel de descuento/supermercado que aparece al tocar "⋯" en una fila pasa de `View` a `Animated.View` con el mismo patrón.
   - Alcance acotado a estos dos puntos a propósito — los modales siguen con `animationType="slide"/"fade"` nativo de RN, sin tocar.
 - **Nota de testing real:** RN Web's `<Modal visible={false}>` no desmonta sus hijos (solo lo oculta) — un modal ya cerrado deja sus componentes (con cualquier texto/chip duplicado, ej. el "+" de un `CategoriaPicker`) presentes pero invisibles en el DOM. No es un bug de la app, pero rompe cualquier test/selector que asuma que solo hay una instancia visible de un texto repetido — hay que filtrar por `isVisible()`, no asumir un índice fijo.
+
+### Rebrand a "AlacenaApp" (COMPLETO)
+- `app.json`: `expo.name` → `AlacenaApp` (ver nota en sección 1 sobre por qué `slug`/`scheme` quedaron igual).
+- **`assets/images/logo.png`** (512×512, nuevo): copia limpia del logo para uso dentro de la app — `screens/AuthScreen.tsx` (arriba del título, que ahora dice "AlacenaApp") y `src/components/app-tabs.web.tsx` (al lado del nombre en la pill flotante de la tab bar).
+- Íconos de la app regenerados a partir del logo: `icon.png` (1024×1024), `favicon.png` (48×48), `splash-icon.png` (512×512), `android-icon-foreground.png` (logo escaneado al 66% y centrado en un canvas de 512×512, para no quedar recortado por la máscara circular/redondeada de Android).
+- **Pendiente real:** `android-icon-background.png` y `android-icon-monochrome.png` quedaron con las imágenes de plantilla de Expo — el monochrome en particular necesita una silueta con canal alfa (el sistema la tiñe solo, no sirve una versión en escala de grises), que no se puede generar con un simple resize; hace falta herramienta de diseño real. Tampoco se tocó el splash animado de `src/components/animated-icon.tsx` (usa `expo-logo.png`/`logo-glow.png`, con glow rotante y gradiente ya afinados para esa forma) — cambiarlo es un trabajo de diseño aparte, no pedido explícitamente.
+- **Nota técnica real:** el archivo que subió el usuario tenía extensión `.png` pero el contenido era en realidad un JPEG (`ffd8ff...`, típico de imágenes generadas y descargadas con la extensión "equivocada") — se convirtió a PNG de verdad con `sharp` antes de usarlo como asset, para no depender de que cada herramienta de build adivine el formato real por el contenido en vez de confiar en la extensión.
 
 ### Pendiente en Fase 6
 - [ ] Scanner de código de barras (cámara → matching contra `codigo_barras` en `productos_base`).

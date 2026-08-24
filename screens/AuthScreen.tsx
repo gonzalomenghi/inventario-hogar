@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -42,7 +43,8 @@ export default function AuthScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.titulo}>Inventario Hogar</Text>
+      <Image source={require('../assets/images/logo.png')} style={styles.logo} />
+      <Text style={styles.titulo}>AlacenaApp</Text>
 
       <TextInput
         style={styles.input}
@@ -90,6 +92,7 @@ export default function AuthScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
+  logo: { width: 88, height: 88, alignSelf: 'center', marginBottom: 4 },
   titulo: { fontSize: 24, fontWeight: '700', textAlign: 'center', marginBottom: 24 },
   input: {
     borderWidth: 1,

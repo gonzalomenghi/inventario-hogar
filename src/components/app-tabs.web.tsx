@@ -6,7 +6,7 @@ import {
   TabTriggerSlotProps,
   TabListProps,
 } from 'expo-router/ui';
-import { Pressable, View, StyleSheet } from 'react-native';
+import { Image, Pressable, View, StyleSheet } from 'react-native';
 
 import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
@@ -62,9 +62,12 @@ export function CustomTabList(props: TabListProps) {
   return (
     <View {...props} style={styles.tabListContainer}>
       <ThemedView type="backgroundElement" style={styles.innerContainer}>
-        <ThemedText type="smallBold" style={styles.brandText}>
-          Inventario Hogar
-        </ThemedText>
+        <View style={styles.brand}>
+          <Image source={require('@/assets/images/logo.png')} style={styles.brandLogo} />
+          <ThemedText type="smallBold" style={styles.brandText}>
+            AlacenaApp
+          </ThemedText>
+        </View>
 
         {props.children}
       </ThemedView>
@@ -91,9 +94,17 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     maxWidth: MaxContentWidth,
   },
-  brandText: {
+  brand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
     marginRight: 'auto',
   },
+  brandLogo: {
+    width: 22,
+    height: 22,
+  },
+  brandText: {},
   pressed: {
     opacity: 0.7,
   },
