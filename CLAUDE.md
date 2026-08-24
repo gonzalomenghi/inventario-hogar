@@ -184,6 +184,18 @@ Relevamiento previo: de 48 `Pressable` en toda la app, solo 1 (la tab bar web, `
 - **Nota técnica real (del rebrand anterior, ya no aplica al logo actual):** el primer logo que subió el usuario tenía extensión `.png` pero el contenido era en realidad un JPEG — se convirtió con `sharp` antes de usarlo como asset. Las imágenes de `assets/brand-alacena/` sí son PNG reales (verificado por firma de bytes antes de copiarlas).
 - `assets/brand-alacena/` se deja en el repo como referencia (paleta completa, tipografía, SVG fuente) — no se borró.
 
+### Login con Google (COMPLETO, solo web)
+
+Alcance decidido con el usuario: **solo web** (donde está deployada la app, ver sección de Vercel más abajo), no nativo — el flujo de OAuth en mobile necesita abrir un browser externo y capturar el deep link de vuelta (`expo-web-browser` + el `scheme` de `app.json`), que es más código y más configuración en Google Cloud Console; se deja para cuando haga falta un build nativo real.
+
+- **`lib/supabase.ts`**: `detectSessionInUrl` pasó de `false` fijo a `Platform.OS === 'web'` — en web hace falta que el cliente detecte el token que Supabase agrega a la URL al volver del redirect de Google; en mobile no hay URL de browser que parsear (ahí sigue en `false`, sin cambio de comportamiento).
+- **`screens/AuthScreen.tsx`**: botón "Continuar con Google" debajo de un separador, **renderizado solo si `Platform.OS === 'web'`** (así el código nunca llama a `window.location.origin` en mobile, donde no existe `window`). Llama a `supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })` — es un redirect real de browser (`signInWithOAuth` hace `window.location.assign` internamente en web), no una llamada async que resuelve con la sesión; el `error` que devuelve la función solo cubre fallos antes de redirigir (ej. red caída), no errores del lado de Supabase/Google (esos aparecen recién en la página de destino, después del redirect).
+- **Verificado en local (Docker) sin el provider configurado:** el botón dispara el redirect real hacia `<SUPABASE_URL>/auth/v1/authorize?provider=google`, que devuelve `"Unsupported provider: provider is not enabled"` — confirma que el flujo de redirect funciona de punta a punta, sin crash de la app; falta solo la configuración real (ver abajo) para que complete contra Google de verdad.
+- **Pendiente real, configuración manual (no se puede hacer por código/CLI):**
+  1. Google Cloud Console → crear credenciales OAuth 2.0 (tipo "Web application"), con `https://qktpohqtwyvwypgohyda.supabase.co/auth/v1/callback` como Authorized redirect URI.
+  2. Supabase Dashboard → Authentication → Providers → Google: pegar el Client ID/Secret de arriba y habilitarlo.
+  3. Supabase Dashboard → Authentication → URL Configuration: agregar el dominio de Vercel (y `http://localhost:8081` para desarrollo local) a "Redirect URLs"/"Site URL", si no, Supabase rechaza el redirect final de vuelta a la app aunque el login con Google haya sido exitoso.
+
 ### Pendiente en Fase 6
 - [ ] Scanner de código de barras (cámara → matching contra `codigo_barras` en `productos_base`).
 

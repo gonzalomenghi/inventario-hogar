@@ -1,6 +1,7 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import { Platform } from 'react-native';
 import type { Database } from '../types/database.types';
 
 // Definidas en .env (ver .env.example). Expo las inlinea automáticamente
@@ -20,6 +21,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     storage: AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false, // false en mobile; en build web lo podés poner true
+    // true en web: necesario para que el cliente detecte el token que Supabase
+    // agrega en la URL al volver del redirect de OAuth (login con Google). En
+    // mobile no hay URL de browser que parsear, se deja en false.
+    detectSessionInUrl: Platform.OS === 'web',
   },
 });

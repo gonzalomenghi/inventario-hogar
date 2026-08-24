@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Image,
+  Platform,
   StyleSheet,
   Text,
   TextInput,
@@ -16,6 +17,7 @@ export default function AuthScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingGoogle, setLoadingGoogle] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState<string | null>(null);
 
@@ -38,6 +40,24 @@ export default function AuthScreen() {
 
     if (modo === 'registro' && !data.session) {
       setMensaje('Cuenta creada. Revisá tu email para confirmarla antes de iniciar sesión.');
+    }
+  };
+
+  const continuarConGoogle = async () => {
+    setError(null);
+    setMensaje(null);
+    setLoadingGoogle(true);
+
+    // signInWithOAuth navega el browser a Google — si no hay error acá, la
+    // página se va a redirigir sola, no hace falta hacer nada más.
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoadingGoogle(false);
     }
   };
 
@@ -89,6 +109,28 @@ export default function AuthScreen() {
           {modo === 'login' ? '¿No tenés cuenta? Creá una' : '¿Ya tenés cuenta? Iniciá sesión'}
         </Text>
       </PressableFeedback>
+
+      {Platform.OS === 'web' && (
+        <>
+          <View style={styles.divisor}>
+            <View style={styles.divisorLinea} />
+            <Text style={styles.divisorTexto}>o</Text>
+            <View style={styles.divisorLinea} />
+          </View>
+
+          <PressableFeedback
+            style={[styles.botonGoogle, loadingGoogle && styles.botonDisabled]}
+            onPress={continuarConGoogle}
+            disabled={loadingGoogle}
+          >
+            {loadingGoogle ? (
+              <ActivityIndicator color={Colors.primary} />
+            ) : (
+              <Text style={styles.botonGoogleTexto}>Continuar con Google</Text>
+            )}
+          </PressableFeedback>
+        </>
+      )}
     </View>
   );
 }
@@ -115,4 +157,16 @@ const styles = StyleSheet.create({
   botonDisabled: { opacity: 0.5 },
   botonTexto: { color: Colors.white, fontWeight: '700', fontSize: 16 },
   link: { textAlign: 'center', color: Colors.primary, marginTop: 16 },
+  divisor: { flexDirection: 'row', alignItems: 'center', marginTop: 20, gap: 10 },
+  divisorLinea: { flex: 1, height: 1, backgroundColor: Colors.border },
+  divisorTexto: { color: Colors.textSecondary, fontSize: 13 },
+  botonGoogle: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: 14,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  botonGoogleTexto: { color: Colors.textPrimary, fontWeight: '600', fontSize: 16 },
 });
