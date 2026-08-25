@@ -6,10 +6,32 @@ import { Colors } from '../constants/colors';
 import { Fonts } from '../constants/typography';
 import { useSupermercados } from '../hooks/useSupermercados';
 
-// Selector de supermercado con alta inline (chip "+" para crear uno
-// nuevo) — se maneja solo (llama a useSupermercados() internamente).
-// Sin ícono ni edición (a diferencia de CategoriaPicker): no hay pedido
-// de renombrar supermercados, se mantiene simple.
+// Cadenas reales del directorio de comercios de SEPA/Precios Claros (el
+// mismo dataset que sincroniza catalogo_sepa_ref, ver
+// scripts/sync-catalogo-sepa.mjs) — filtrado a cadenas de supermercado
+// genuinas, sin estaciones de servicio/fabricantes que también aparecen
+// en el dataset completo. Mientras menos tipeo manual, mejor: se muestran
+// como chips de un toque en vez de que el usuario tenga que escribir cada
+// supermercado desde cero.
+const SUPERMERCADOS_SEPA = [
+  'Coto',
+  'Carrefour',
+  'Dia',
+  'Vea',
+  'La Anónima',
+  'Changomas',
+  'Libertad',
+  'Cooperativa Obrera',
+  'California',
+  'Comodín',
+  'Mariano Max',
+  'Unicoop',
+];
+
+// Selector de supermercado con alta inline ("+ Otro" para cargar uno que
+// no esté en la lista sugerida) — se maneja solo (llama a
+// useSupermercados() internamente). Sin ícono ni edición (a diferencia de
+// CategoriaPicker): no hay pedido de renombrar supermercados.
 export default function SupermercadoPicker({
   value,
   onChange,
@@ -23,6 +45,12 @@ export default function SupermercadoPicker({
   const [nombreForm, setNombreForm] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [errorForm, setErrorForm] = useState<string | null>(null);
+  // Nombre del chip sugerido que se está creando (para mostrar el spinner
+  // solo en ese chip, no un estado global) — null cuando ninguno está en curso.
+  const [creandoSugerido, setCreandoSugerido] = useState<string | null>(null);
+
+  const nombresYaCreados = new Set(supermercados.map((s) => s.nombre.trim().toLowerCase()));
+  const sugeridos = SUPERMERCADOS_SEPA.filter((nombre) => !nombresYaCreados.has(nombre.toLowerCase()));
 
   const abrirAlta = () => {
     setFormAbierto(true);
@@ -33,6 +61,15 @@ export default function SupermercadoPicker({
   const cancelarForm = () => {
     setFormAbierto(false);
     setErrorForm(null);
+  };
+
+  const elegirSugerido = async (nombre: string) => {
+    if (creandoSugerido) return;
+    setCreandoSugerido(nombre);
+    const creado = await crearSupermercado(nombre);
+    setCreandoSugerido(null);
+
+    if (creado) onChange(creado.id);
   };
 
   const guardarForm = async () => {
@@ -79,7 +116,22 @@ export default function SupermercadoPicker({
             </PressableFeedback>
           ))}
 
-          <PressableFeedback style={styles.chipNueva} onPress={abrirAlta}>
+          {sugeridos.map((nombre) => (
+            <PressableFeedback
+              key={nombre}
+              style={styles.chipSugerido}
+              onPress={() => elegirSugerido(nombre)}
+              disabled={creandoSugerido !== null}
+            >
+              {creandoSugerido === nombre ? (
+                <ActivityIndicator size="small" color={Colors.textSecondary} />
+              ) : (
+                <Text style={styles.chipSugeridoTexto}>{nombre}</Text>
+              )}
+            </PressableFeedback>
+          ))}
+
+          <PressableFeedback style={styles.chipNueva} onPress={abrirAlta} accessibilityLabel="Otro supermercado">
             <Plus size={16} color={Colors.primary} strokeWidth={2.75} />
           </PressableFeedback>
         </View>
@@ -89,12 +141,12 @@ export default function SupermercadoPicker({
 
       {formAbierto && (
         <View style={styles.form}>
-          <Text style={styles.formTitulo}>Nuevo supermercado</Text>
+          <Text style={styles.formTitulo}>Otro supermercado</Text>
           <TextInput
             style={styles.input}
             value={nombreForm}
             onChangeText={setNombreForm}
-            placeholder="Coto, Dia, Carrefour..."
+            placeholder="Nombre del supermercado"
             autoFocus
           />
 
@@ -135,6 +187,21 @@ const styles = StyleSheet.create({
   chipPressed: { backgroundColor: Colors.primaryDark },
   chipTexto: { color: Colors.textPrimary, fontFamily: Fonts.semibold, fontSize: 13 },
   chipTextoActivo: { color: Colors.white, fontFamily: Fonts.bold },
+  // Sugeridos: mismo tamaño que un chip normal pero con borde punteado en
+  // vez de fondo sólido, para distinguir "todavía no es tuyo, tocá para
+  // agregarlo" de los que ya creaste.
+  chipSugerido: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderStyle: 'dashed',
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    minWidth: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chipSugeridoTexto: { color: Colors.textSecondary, fontFamily: Fonts.semibold, fontSize: 13 },
   chipNueva: {
     backgroundColor: Colors.backgroundMuted,
     borderRadius: 999,

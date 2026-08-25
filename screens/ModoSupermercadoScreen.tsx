@@ -1,4 +1,4 @@
-import { Check, ChevronLeft } from 'lucide-react-native';
+import { Check, ChevronLeft, Minus, Plus } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TextInput, Modal, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -166,6 +166,25 @@ export default function ModoSupermercadoScreen({
     if (error) fetchDetalle(); // revertir UI optimista si falla
   };
 
+  // Editable para permitir llevar más o menos que el mínimo sugerido por
+  // la auto-generación (fn_generar_lista_compra_interna calcula
+  // stock_minimo - cantidad_actual, pero es solo un punto de partida).
+  // No baja de 1 — "0 unidades" no tiene sentido en una lista de compras.
+  const ajustarCantidadSolicitada = async (item: DetalleListaItem, delta: number) => {
+    const nuevaCantidad = Math.max(item.cantidad_solicitada + delta, 1);
+
+    setDetalle((prev) =>
+      prev.map((it) => (it.id === item.id ? { ...it, cantidad_solicitada: nuevaCantidad } : it))
+    );
+
+    const { error } = await supabase
+      .from('detalle_lista')
+      .update({ cantidad_solicitada: nuevaCantidad })
+      .eq('id', item.id);
+
+    if (error) fetchDetalle(); // revertir UI optimista si falla
+  };
+
   const pendientes = detalle.filter((d) => !d.comprado);
   const comprados = detalle.filter((d) => d.comprado);
 
@@ -257,6 +276,7 @@ export default function ModoSupermercadoScreen({
             supermercadoId={item.id in supermercadoEnEdicion ? supermercadoEnEdicion[item.id] : item.supermercado_id}
             onCambiarSupermercado={(id) => setSupermercadoEnEdicion((prev) => ({ ...prev, [item.id]: id }))}
             onComprar={() => marcarComprado(item)}
+            onAjustarCantidad={(delta) => ajustarCantidadSolicitada(item, delta)}
           />
         )}
         ListFooterComponent={
@@ -350,6 +370,7 @@ function FilaPendiente({
   supermercadoId,
   onCambiarSupermercado,
   onComprar,
+  onAjustarCantidad,
 }: {
   item: DetalleListaItem;
   abierto: boolean;
@@ -361,6 +382,7 @@ function FilaPendiente({
   supermercadoId: string | null;
   onCambiarSupermercado: (id: string) => void;
   onComprar: () => void;
+  onAjustarCantidad: (delta: number) => void;
 }) {
   const [hoverCheckbox, setHoverCheckbox] = useState(false);
   // Preview de ahorro: se pide el cálculo real a Postgres (misma fórmula
@@ -409,9 +431,25 @@ function FilaPendiente({
 
         <View style={styles.info}>
           <Text style={styles.nombre}>{item.producto?.nombre}</Text>
-          <Text style={styles.cantidad}>
-            {item.cantidad_solicitada} {item.producto?.unidad_medida}
-          </Text>
+          <View style={styles.cantidadStepper}>
+            <PressableFeedback
+              style={({ pressed }) => [styles.cantidadBoton, pressed && styles.cantidadBotonPressed]}
+              onPress={() => onAjustarCantidad(-1)}
+              accessibilityLabel={`Restar unidad a ${item.producto?.nombre}`}
+            >
+              <Minus size={11} color={Colors.textSecondary} strokeWidth={2.75} />
+            </PressableFeedback>
+            <Text style={styles.cantidad}>
+              {item.cantidad_solicitada} {item.producto?.unidad_medida}
+            </Text>
+            <PressableFeedback
+              style={({ pressed }) => [styles.cantidadBoton, pressed && styles.cantidadBotonPressed]}
+              onPress={() => onAjustarCantidad(1)}
+              accessibilityLabel={`Sumar unidad a ${item.producto?.nombre}`}
+            >
+              <Plus size={11} color={Colors.textSecondary} strokeWidth={2.75} />
+            </PressableFeedback>
+          </View>
         </View>
 
         <TextInput
@@ -575,7 +613,17 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     textDecorationLine: 'line-through',
   },
-  cantidad: { fontFamily: Fonts.medium, fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
+  cantidad: { fontFamily: Fonts.medium, fontSize: 13, color: Colors.textSecondary },
+  cantidadStepper: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  cantidadBoton: {
+    width: 20,
+    height: 20,
+    borderRadius: 999,
+    backgroundColor: Colors.backgroundMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cantidadBotonPressed: { backgroundColor: '#dfc6a8' },
   inputPrecio: {
     minWidth: 64,
     backgroundColor: Colors.background,
@@ -628,7 +676,7 @@ const styles = StyleSheet.create({
   fab: {
     position: posicionFlotante,
     right: 20,
-    bottom: 24,
+    bottom: 86, // deja lugar a la tab bar flotante (~76-90px), si no queda tapado detrás
     width: 58,
     height: 58,
     borderRadius: 999,
