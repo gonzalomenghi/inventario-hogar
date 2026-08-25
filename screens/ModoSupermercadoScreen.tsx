@@ -81,6 +81,8 @@ export default function ModoSupermercadoScreen({
   // necesita su propio spinner — con un booleano ambos se verían "en
   // curso" a la vez aunque solo se haya tocado uno.
   const [accionSalida, setAccionSalida] = useState<AccionSalida>(null);
+  const [confirmCompraVisible, setConfirmCompraVisible] = useState(false);
+  const [confirmandoCompra, setConfirmandoCompra] = useState(false);
 
   const fetchDetalle = useCallback(async () => {
     const { data, error } = await supabase
@@ -122,8 +124,10 @@ export default function ModoSupermercadoScreen({
   // "Cancelar": no borra nada, solo saca la lista de estado 'activa' (queda
   // como registro en el historial). "Eliminar": borra la lista de verdad —
   // detalle_lista se va con ella por el ON DELETE CASCADE de su FK a
-  // listas_compra. Ninguna de las dos toca inventario_hogar/precios_historico
-  // de los ítems ya comprados: esos son compras reales, ya sucedieron.
+  // listas_compra. Ninguna de las dos necesita revertir nada en
+  // inventario_hogar/precios_historico: mientras la compra no se confirma
+  // (fn_confirmar_compra_lista) esas tablas ni se tocan, tildar un ítem acá
+  // solo calcula precio_final, nunca escribe stock.
   const cancelarLista = async () => {
     setAccionSalida('cancelar');
     const { error } = await supabase
@@ -149,12 +153,28 @@ export default function ModoSupermercadoScreen({
     }
   };
 
-  // Al tildar el check: si cargó precio/descuento (acá o al agregar el
-  // ítem a la lista), el trigger fn_comprar_item_lista se encarga de
-  // sumar el stock y guardar el histórico de precio automáticamente.
-  // Importante: si el usuario no tocó nada acá, hay que mandar lo que YA
-  // tenía el ítem (no null) — si no, se pisa el precio/descuento que se
-  // haya cargado al agregarlo manualmente a la lista.
+  // Cierra la compra de una: procesa TODOS los ítems tildados de una vez
+  // (fn_confirmar_compra_lista) — recién acá se suma a inventario_hogar y
+  // se guarda precios_historico, y la lista pasa a 'completada'. Los
+  // ítems que quedaron sin tildar (no se encontraron, quedaron afuera)
+  // simplemente no se compran, sin bloquear el resto.
+  const confirmarCompra = async () => {
+    setConfirmandoCompra(true);
+    const { error } = await supabase.rpc('fn_confirmar_compra_lista', { p_lista_id: listaId });
+    setConfirmandoCompra(false);
+
+    if (!error) {
+      setConfirmCompraVisible(false);
+      onSalir();
+    }
+  };
+
+  // Al tildar el check el trigger solo calcula precio_final (no toca stock
+  // ni precios_historico todavía — eso pasa en bloque recién al confirmar
+  // la compra completa, ver confirmarCompra más abajo). Importante: si el
+  // usuario no tocó nada acá, hay que mandar lo que YA tenía el ítem (no
+  // null) — si no, se pisa el precio/descuento que se haya cargado al
+  // agregarlo manualmente a la lista.
   const marcarComprado = async (item: DetalleListaItem) => {
     const precioTexto = precioEnEdicion[item.id];
     const precio = precioTexto?.trim() ? parseFloat(precioTexto.replace(',', '.')) : item.precio_unitario;
@@ -186,11 +206,11 @@ export default function ModoSupermercadoScreen({
       })
       .eq('id', item.id);
 
-    // Siempre refetch (no solo si falla): precio_final y precio_historico_id
-    // los calcula el trigger del lado del servidor, la actualización
-    // optimista de arriba no los conoce — sin este refetch quedaban en
-    // null hasta el próximo refresh disparado por otra acción, y el ítem
-    // recién comprado aportaba $0 al total aunque tuviera precio cargado.
+    // Siempre refetch (no solo si falla): precio_final lo calcula el
+    // trigger del lado del servidor, la actualización optimista de arriba
+    // no lo conoce — sin este refetch quedaba en null hasta el próximo
+    // refresh disparado por otra acción, y el ítem recién comprado
+    // aportaba $0 al total real aunque tuviera precio cargado.
     fetchDetalle();
   };
 
@@ -230,15 +250,14 @@ export default function ModoSupermercadoScreen({
     if (!error) fetchDetalle();
   };
 
-  // Volver un ítem ya tildado a pendiente (por si se marcó por error). El
-  // trigger fn_comprar_item_lista se encarga de restar lo sumado a
-  // inventario_hogar y borrar el registro de precios_historico que había
-  // creado — acá solo se manda comprado:false, nada de esa reversión se
-  // reimplementa en el frontend.
+  // Volver un ítem ya tildado a pendiente (por si se marcó por error). Como
+  // tildar todavía no tocó inventario_hogar/precios_historico (eso recién
+  // pasa al confirmar la compra completa), el trigger solo tiene que
+  // limpiar cantidad_comprada/precio_final — no hay nada más que deshacer.
   const revertirCompra = async (item: DetalleListaItem) => {
     setDetalle((prev) => prev.map((it) => (it.id === item.id ? { ...it, comprado: false } : it)));
     await supabase.from('detalle_lista').update({ comprado: false }).eq('id', item.id);
-    fetchDetalle(); // trae cantidad_comprada/precio_final/precio_historico_id ya limpiados por el trigger
+    fetchDetalle(); // trae cantidad_comprada/precio_final ya limpiados por el trigger
   };
 
   // Props compartidas entre FilaPendiente y FilaComprada (ambas editan
@@ -271,22 +290,30 @@ export default function ModoSupermercadoScreen({
   const pendientes = detalle.filter((d) => !d.comprado);
   const comprados = detalle.filter((d) => d.comprado);
 
-  // precio_final (ítems ya comprados) y precio_estimado (pendientes, columna
-  // generada en Postgres con la misma fórmula de descuento) ya vienen
-  // calculados desde la base — acá solo se suman, no se reimplementa la
-  // fórmula de descuento en el frontend. Los ítems sin precio cargado
-  // todavía no entran a la suma, pero sí se cuentan para avisar que el
-  // total es parcial.
+  // Dos totales separados, no uno solo: precio_estimado (pendientes) es una
+  // proyección, precio_final (ya "en el changuito") es el precio real que
+  // se va a pagar — mezclarlos en un solo número escondía que parte de la
+  // plata ya está comprometida. Ambas columnas vienen calculadas desde la
+  // base (misma fórmula de descuento), acá solo se suman. Los ítems sin
+  // precio cargado todavía no entran a ninguna suma, pero sí se cuentan
+  // para avisar que el total es parcial.
   let totalEstimado = 0;
+  let totalReal = 0;
   let itemsSinPrecio = 0;
   for (const item of detalle) {
-    const precio = item.comprado ? item.precio_final : item.precio_estimado;
-    if (precio == null) {
-      itemsSinPrecio += 1;
-      continue;
+    if (item.comprado) {
+      if (item.precio_final == null) {
+        itemsSinPrecio += 1;
+        continue;
+      }
+      totalReal += item.precio_final * (item.cantidad_comprada ?? item.cantidad_solicitada);
+    } else {
+      if (item.precio_estimado == null) {
+        itemsSinPrecio += 1;
+        continue;
+      }
+      totalEstimado += item.precio_estimado * item.cantidad_solicitada;
     }
-    const cantidad = item.comprado ? item.cantidad_comprada ?? item.cantidad_solicitada : item.cantidad_solicitada;
-    totalEstimado += precio * cantidad;
   }
 
   const progreso = detalle.length > 0 ? comprados.length / detalle.length : 0;
@@ -322,9 +349,17 @@ export default function ModoSupermercadoScreen({
           <Text style={styles.cardProgresoTexto}>
             {comprados.length} de {detalle.length} en el changuito
           </Text>
-          <View style={styles.cardProgresoTotal}>
-            <Text style={styles.cardProgresoMonto}>${totalEstimado.toFixed(0)}</Text>
-            <Text style={styles.cardProgresoEstimado}>estimado</Text>
+          <View style={styles.cardProgresoTotales}>
+            {comprados.length > 0 && (
+              <View style={styles.cardProgresoTotal}>
+                <Text style={styles.cardProgresoMontoReal}>${totalReal.toFixed(0)}</Text>
+                <Text style={styles.cardProgresoEstimado}>real</Text>
+              </View>
+            )}
+            <View style={styles.cardProgresoTotal}>
+              <Text style={styles.cardProgresoMonto}>${totalEstimado.toFixed(0)}</Text>
+              <Text style={styles.cardProgresoEstimado}>estimado</Text>
+            </View>
           </View>
         </View>
         <View style={styles.barraTrack}>
@@ -335,6 +370,13 @@ export default function ModoSupermercadoScreen({
         </View>
         {itemsSinPrecio > 0 && (
           <Text style={styles.cardProgresoNota}>{itemsSinPrecio} sin precio cargado</Text>
+        )}
+        {comprados.length > 0 && (
+          <PressableFeedback style={styles.botonConfirmarCompra} onPress={() => setConfirmCompraVisible(true)}>
+            <Text style={styles.botonConfirmarCompraTexto}>
+              Confirmar compra{pendientes.length > 0 ? ` (${pendientes.length} sin comprar)` : ''}
+            </Text>
+          </PressableFeedback>
         )}
       </View>
 
@@ -420,6 +462,45 @@ export default function ModoSupermercadoScreen({
               style={styles.confirmVolver}
               onPress={() => setConfirmSalirVisible(false)}
               disabled={accionSalida !== null}
+            >
+              <Text style={styles.confirmVolverTexto}>Volver</Text>
+            </PressableFeedback>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={confirmCompraVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setConfirmCompraVisible(false)}
+      >
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmSheet}>
+            <Text style={styles.confirmTitulo}>¿Confirmar la compra?</Text>
+            <Text style={styles.confirmTexto}>
+              Se van a sumar {comprados.length} {comprados.length === 1 ? 'ítem' : 'ítems'} al inventario y al
+              historial de precios (${totalReal.toFixed(0)}).
+              {pendientes.length > 0 &&
+                ` ${pendientes.length === 1 ? 'El' : 'Los'} ${pendientes.length} ${pendientes.length === 1 ? 'ítem' : 'ítems'} sin comprar no se ${pendientes.length === 1 ? 'va' : 'van'} a agregar.`}
+            </Text>
+
+            <PressableFeedback
+              style={[styles.confirmBotonPrimario, confirmandoCompra && styles.botonDisabled]}
+              onPress={confirmarCompra}
+              disabled={confirmandoCompra}
+            >
+              {confirmandoCompra ? (
+                <ActivityIndicator color={Colors.white} />
+              ) : (
+                <Text style={styles.confirmBotonPrimarioTexto}>Confirmar compra</Text>
+              )}
+            </PressableFeedback>
+
+            <PressableFeedback
+              style={styles.confirmVolver}
+              onPress={() => setConfirmCompraVisible(false)}
+              disabled={confirmandoCompra}
             >
               <Text style={styles.confirmVolverTexto}>Volver</Text>
             </PressableFeedback>
@@ -709,10 +790,23 @@ const styles = StyleSheet.create({
   },
   cardProgresoFila: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   cardProgresoTexto: { fontFamily: Fonts.semibold, fontSize: 13, color: '#cbb5a5' },
+  cardProgresoTotales: { flexDirection: 'row', gap: 14 },
   cardProgresoTotal: { alignItems: 'flex-end' },
   cardProgresoMonto: { fontFamily: Fonts.bold, fontSize: 20, color: Colors.white },
+  // "real" (ya en el changuito, precio_final) se distingue de "estimado"
+  // (pendiente, precio_estimado) con el mismo verde que el resto de la app
+  // usa para "confirmado/positivo" — evita que se confundan a simple vista.
+  cardProgresoMontoReal: { fontFamily: Fonts.bold, fontSize: 20, color: Colors.success },
   cardProgresoEstimado: { fontFamily: Fonts.medium, fontSize: 12, color: '#cbb5a5' },
   cardProgresoNota: { fontFamily: Fonts.medium, fontSize: 11.5, color: '#cbb5a5', marginTop: 6 },
+  botonConfirmarCompra: {
+    backgroundColor: Colors.success,
+    borderRadius: 999,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 14,
+  },
+  botonConfirmarCompraTexto: { color: Colors.white, fontFamily: Fonts.bold, fontSize: 14 },
   barraTrack: {
     height: 8,
     borderRadius: 999,
@@ -846,6 +940,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   confirmTitulo: { fontSize: 16, fontFamily: Fonts.bold, color: Colors.textPrimary, marginBottom: 6 },
+  confirmTexto: { fontSize: 14, fontFamily: Fonts.medium, color: Colors.textSecondary, marginBottom: 4 },
+  confirmBotonPrimario: {
+    backgroundColor: Colors.success,
+    borderRadius: 999,
+    padding: 13,
+    alignItems: 'center',
+  },
+  confirmBotonPrimarioTexto: { color: Colors.white, fontFamily: Fonts.bold },
   confirmBoton: {
     backgroundColor: Colors.background,
     borderRadius: 999,
