@@ -1,13 +1,17 @@
 name: Recordatorio sync SEPA
 
-# Corre en un runner hosteado normal (no necesita el self-hosted: mandar
-# un mail no toca datos.produccion.gob.ar). 30 min antes del sync real
-# (sync-catalogo-sepa.yml, lunes 11:00 ART) para que el usuario tenga
-# tiempo de prender la PC — ese workflow no corre solo si el runner
-# self-hosted no está online.
+# El sync de catalogo_sepa_ref (scripts/sync-catalogo-sepa.mjs) se corre a
+# mano, no automatizado — ver CLAUDE.md para el detalle completo, pero en
+# resumen: datos.produccion.gob.ar bloquea IPs de datacenter (403 real
+# contra un runner hosteado de GitHub, confirmado, y también contra el
+# sandbox de las rutinas programadas de Claude), y un self-hosted runner
+# en la PC del usuario no es una opción segura en un repo público (forks
+# podrían abrir un PR que ejecute código arbitrario en esa máquina —
+# advertencia oficial de GitHub). Este workflow solo manda el recordatorio
+# por mail; correr el script queda 100% manual.
 on:
   schedule:
-    - cron: '30 13 * * 1' # 13:30 UTC = 10:30 ART, todos los lunes
+    - cron: '0 12 * * 1' # 12:00 UTC = 09:00 ART, todos los lunes
   workflow_dispatch: {}
 
 jobs:
@@ -22,10 +26,13 @@ jobs:
           password: ${{ secrets.GMAIL_APP_PASSWORD }}
           from: AlacenaApp — Sync SEPA <gmenghi40@gmail.com>
           to: gmenghi40@gmail.com
-          subject: 'Prendé la PC — sync de SEPA en 30 min'
+          subject: 'Recordatorio: correr el sync de SEPA'
           body: |
-            El sync semanal del catálogo SEPA corre hoy a las 11:00 (ART).
+            Hoy corresponde correr a mano el sync semanal del catálogo
+            SEPA/Precios Claros (productos de supermercados para el
+            matching difuso).
 
-            Corre en el runner self-hosted de tu PC — si está apagada o el
-            runner no está corriendo, el job de esta semana no se dispara
-            (se salta, no queda pendiente para más tarde).
+            Pedile a Claude Code que lo corra, o ejecutá vos mismo:
+            node scripts/sync-catalogo-sepa.mjs
+            (con SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en el entorno —
+            nunca los pegues en un mail ni los commitees).

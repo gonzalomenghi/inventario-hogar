@@ -97,7 +97,7 @@ supabase/
   migrations/              Migraciones SQL (Supabase CLI) — el schema completo vive acá
   functions/                Edge Functions: procesar-ticket (OCR)
 
-scripts/sync-catalogo-sepa.mjs  Sync del catálogo SEPA/Precios Claros (corre vía GitHub Actions, ver .github/workflows/)
+scripts/sync-catalogo-sepa.mjs  Sync del catálogo SEPA/Precios Claros — manual (ver CLAUDE.md), .github/workflows/ solo tiene el recordatorio semanal por mail
 
 assets/                   Íconos, splash, y el kit de marca (assets/brand-alacena/)
 ```
