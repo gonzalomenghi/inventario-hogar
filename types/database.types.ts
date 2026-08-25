@@ -100,6 +100,7 @@ export type Database = {
           lista_id: string
           precio_estimado: number | null
           precio_final: number | null
+          precio_historico_id: string | null
           precio_unitario: number | null
           producto_id: string
           supermercado_id: string | null
@@ -116,6 +117,7 @@ export type Database = {
           lista_id: string
           precio_estimado?: number | null
           precio_final?: number | null
+          precio_historico_id?: string | null
           precio_unitario?: number | null
           producto_id: string
           supermercado_id?: string | null
@@ -132,6 +134,7 @@ export type Database = {
           lista_id?: string
           precio_estimado?: number | null
           precio_final?: number | null
+          precio_historico_id?: string | null
           precio_unitario?: number | null
           producto_id?: string
           supermercado_id?: string | null
@@ -145,6 +148,13 @@ export type Database = {
             columns: ["lista_id"]
             isOneToOne: false
             referencedRelation: "listas_compra"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalle_lista_precio_historico_id_fkey"
+            columns: ["precio_historico_id"]
+            isOneToOne: false
+            referencedRelation: "precios_historico"
             referencedColumns: ["id"]
           },
           {

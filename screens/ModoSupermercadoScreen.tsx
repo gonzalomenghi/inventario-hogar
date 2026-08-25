@@ -36,6 +36,29 @@ function labelDescuento(tipo: TipoDescuento, valor: string): string {
   }
 }
 
+// Persiste el precio tipeado 600ms después de la última tecla, tanto en
+// filas pendientes como ya compradas (antes solo se mandaba a la base al
+// tildar el check, así que precio_estimado —columna generada en
+// Postgres— nunca se recalculaba mientras el ítem seguía pendiente).
+// Compara contra el precio ya guardado para no disparar un guardado
+// espurio apenas se monta la fila con el valor que ya tenía.
+function usePrecioDebounced(
+  precioTexto: string,
+  precioActual: number | null,
+  onGuardarPrecio: (precio: number | null) => void
+) {
+  useEffect(() => {
+    const id = setTimeout(() => {
+      const parsed = precioTexto.trim() ? parseFloat(precioTexto.replace(',', '.')) : null;
+      if (parsed != null && Number.isNaN(parsed)) return;
+      if (parsed === precioActual) return;
+      onGuardarPrecio(parsed);
+    }, 600);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- se re-dispara con cada tecla, que es lo que importa acá
+  }, [precioTexto]);
+}
+
 export default function ModoSupermercadoScreen({
   listaId,
   onSalir,
@@ -151,7 +174,7 @@ export default function ModoSupermercadoScreen({
       prev.map((it) => (it.id === item.id ? { ...it, comprado: true } : it))
     );
 
-    const { error } = await supabase
+    await supabase
       .from('detalle_lista')
       .update({
         comprado: true,
@@ -163,7 +186,12 @@ export default function ModoSupermercadoScreen({
       })
       .eq('id', item.id);
 
-    if (error) fetchDetalle(); // revertir UI optimista si falla
+    // Siempre refetch (no solo si falla): precio_final y precio_historico_id
+    // los calcula el trigger del lado del servidor, la actualización
+    // optimista de arriba no los conoce — sin este refetch quedaban en
+    // null hasta el próximo refresh disparado por otra acción, y el ítem
+    // recién comprado aportaba $0 al total aunque tuviera precio cargado.
+    fetchDetalle();
   };
 
   // Editable para permitir llevar más o menos que el mínimo sugerido por
@@ -184,6 +212,61 @@ export default function ModoSupermercadoScreen({
 
     if (error) fetchDetalle(); // revertir UI optimista si falla
   };
+
+  // Persiste precio/descuento/supermercado apenas se editan, para ítems
+  // pendientes Y ya comprados — antes solo se mandaban a la base al tildar
+  // el check (marcarComprado), así que el campo de precio quedaba "vivo"
+  // solo en estado local y el total estimado (que lee precio_estimado,
+  // columna generada en Postgres) se quedaba en $0 hasta comprar algo.
+  // Refetchea al terminar para traer precio_estimado/precio_final ya
+  // recalculados por la base (no se reimplementa esa fórmula acá).
+  const guardarCampo = async (
+    item: DetalleListaItem,
+    patch: Partial<
+      Pick<DetalleListaItem, 'precio_unitario' | 'tipo_descuento' | 'valor_descuento' | 'supermercado_id'>
+    >
+  ) => {
+    const { error } = await supabase.from('detalle_lista').update(patch).eq('id', item.id);
+    if (!error) fetchDetalle();
+  };
+
+  // Volver un ítem ya tildado a pendiente (por si se marcó por error). El
+  // trigger fn_comprar_item_lista se encarga de restar lo sumado a
+  // inventario_hogar y borrar el registro de precios_historico que había
+  // creado — acá solo se manda comprado:false, nada de esa reversión se
+  // reimplementa en el frontend.
+  const revertirCompra = async (item: DetalleListaItem) => {
+    setDetalle((prev) => prev.map((it) => (it.id === item.id ? { ...it, comprado: false } : it)));
+    await supabase.from('detalle_lista').update({ comprado: false }).eq('id', item.id);
+    fetchDetalle(); // trae cantidad_comprada/precio_final/precio_historico_id ya limpiados por el trigger
+  };
+
+  // Props compartidas entre FilaPendiente y FilaComprada (ambas editan
+  // precio/descuento/supermercado con el mismo mecanismo) — evita repetir
+  // la misma derivación en los dos lugares donde se renderiza un ítem.
+  const camposEditables = (item: DetalleListaItem) => ({
+    abierto: expandido.has(item.id),
+    onToggle: () => toggleExpandido(item.id),
+    precioTexto: precioEnEdicion[item.id] ?? (item.precio_unitario != null ? String(item.precio_unitario) : ''),
+    onCambiarPrecio: (t: string) => setPrecioEnEdicion((prev) => ({ ...prev, [item.id]: t })),
+    onGuardarPrecio: (precio: number | null) => guardarCampo(item, { precio_unitario: precio }),
+    descuento: descuentoEnEdicion[item.id] ?? {
+      tipo: item.tipo_descuento,
+      valor: item.valor_descuento != null ? String(item.valor_descuento) : '',
+    },
+    onCambiarDescuento: (d: DescuentoEdicion) => {
+      setDescuentoEnEdicion((prev) => ({ ...prev, [item.id]: d }));
+      guardarCampo(item, {
+        tipo_descuento: d.tipo,
+        valor_descuento: d.valor.trim() ? parseFloat(d.valor.replace(',', '.')) : null,
+      });
+    },
+    supermercadoId: item.id in supermercadoEnEdicion ? supermercadoEnEdicion[item.id] : item.supermercado_id,
+    onCambiarSupermercado: (id: string) => {
+      setSupermercadoEnEdicion((prev) => ({ ...prev, [item.id]: id }));
+      guardarCampo(item, { supermercado_id: id });
+    },
+  });
 
   const pendientes = detalle.filter((d) => !d.comprado);
   const comprados = detalle.filter((d) => d.comprado);
@@ -262,19 +345,7 @@ export default function ModoSupermercadoScreen({
         renderItem={({ item }) => (
           <FilaPendiente
             item={item}
-            abierto={expandido.has(item.id)}
-            onToggle={() => toggleExpandido(item.id)}
-            precioTexto={precioEnEdicion[item.id] ?? (item.precio_unitario != null ? String(item.precio_unitario) : '')}
-            onCambiarPrecio={(t) => setPrecioEnEdicion((prev) => ({ ...prev, [item.id]: t }))}
-            descuento={
-              descuentoEnEdicion[item.id] ?? {
-                tipo: item.tipo_descuento,
-                valor: item.valor_descuento != null ? String(item.valor_descuento) : '',
-              }
-            }
-            onCambiarDescuento={(d) => setDescuentoEnEdicion((prev) => ({ ...prev, [item.id]: d }))}
-            supermercadoId={item.id in supermercadoEnEdicion ? supermercadoEnEdicion[item.id] : item.supermercado_id}
-            onCambiarSupermercado={(id) => setSupermercadoEnEdicion((prev) => ({ ...prev, [item.id]: id }))}
+            {...camposEditables(item)}
             onComprar={() => marcarComprado(item)}
             onAjustarCantidad={(delta) => ajustarCantidadSolicitada(item, delta)}
           />
@@ -288,7 +359,7 @@ export default function ModoSupermercadoScreen({
                 <View style={styles.separadorLinea} />
               </View>
               {comprados.map((item) => (
-                <FilaComprada key={item.id} item={item} />
+                <FilaComprada key={item.id} item={item} {...camposEditables(item)} onRevertir={() => revertirCompra(item)} />
               ))}
             </View>
           ) : null
@@ -365,6 +436,7 @@ function FilaPendiente({
   onToggle,
   precioTexto,
   onCambiarPrecio,
+  onGuardarPrecio,
   descuento,
   onCambiarDescuento,
   supermercadoId,
@@ -377,6 +449,7 @@ function FilaPendiente({
   onToggle: () => void;
   precioTexto: string;
   onCambiarPrecio: (t: string) => void;
+  onGuardarPrecio: (precio: number | null) => void;
   descuento: DescuentoEdicion;
   onCambiarDescuento: (d: DescuentoEdicion) => void;
   supermercadoId: string | null;
@@ -385,6 +458,7 @@ function FilaPendiente({
   onAjustarCantidad: (delta: number) => void;
 }) {
   const [hoverCheckbox, setHoverCheckbox] = useState(false);
+  usePrecioDebounced(precioTexto, item.precio_unitario, onGuardarPrecio);
   // Preview de ahorro: se pide el cálculo real a Postgres (misma fórmula
   // que fn_comprar_item_lista/precio_estimado) en vez de reimplementarlo
   // acá — solo se dispara mientras hay precio + descuento cargados y el
@@ -502,7 +576,38 @@ function FilaPendiente({
   );
 }
 
-function FilaComprada({ item }: { item: DetalleListaItem }) {
+// Precio/descuento/supermercado siguen editables después de comprado: lo
+// cargado antes de pasar por caja suele ser una estimación, y acá se
+// corrige por el precio real del ticket. fn_comprar_item_lista recalcula
+// precio_final y actualiza (no duplica) el registro de precios_historico
+// ya creado — el frontend solo manda el patch, igual que en FilaPendiente.
+function FilaComprada({
+  item,
+  abierto,
+  onToggle,
+  precioTexto,
+  onCambiarPrecio,
+  onGuardarPrecio,
+  descuento,
+  onCambiarDescuento,
+  supermercadoId,
+  onCambiarSupermercado,
+  onRevertir,
+}: {
+  item: DetalleListaItem;
+  abierto: boolean;
+  onToggle: () => void;
+  precioTexto: string;
+  onCambiarPrecio: (t: string) => void;
+  onGuardarPrecio: (precio: number | null) => void;
+  descuento: DescuentoEdicion;
+  onCambiarDescuento: (d: DescuentoEdicion) => void;
+  supermercadoId: string | null;
+  onCambiarSupermercado: (id: string) => void;
+  onRevertir: () => void;
+}) {
+  usePrecioDebounced(precioTexto, item.precio_unitario, onGuardarPrecio);
+
   return (
     <Animated.View
       entering={FadeIn.duration(150)}
@@ -510,17 +615,56 @@ function FilaComprada({ item }: { item: DetalleListaItem }) {
       style={[styles.row, styles.rowComprada]}
     >
       <View style={styles.filaPrincipal}>
-        <View style={styles.checkboxLleno}>
+        <PressableFeedback
+          style={styles.checkboxLleno}
+          onPress={onRevertir}
+          accessibilityLabel={`Volver a pendiente: ${item.producto?.nombre}`}
+        >
           <Check size={14} color={Colors.white} strokeWidth={3} />
-        </View>
+        </PressableFeedback>
         <View style={styles.info}>
           <Text style={styles.nombreComprado}>{item.producto?.nombre}</Text>
           <Text style={styles.cantidad}>
-            {item.cantidad_solicitada} {item.producto?.unidad_medida}
-            {item.precio_final != null ? ` · $${item.precio_final.toFixed(0)}` : ''}
+            {item.cantidad_comprada ?? item.cantidad_solicitada} {item.producto?.unidad_medida}
           </Text>
         </View>
+
+        <TextInput
+          style={[styles.inputPrecio, !precioTexto && styles.inputPrecioVacio]}
+          placeholder="—"
+          placeholderTextColor="#d8c2ae"
+          keyboardType="decimal-pad"
+          value={precioTexto}
+          onChangeText={onCambiarPrecio}
+        />
+        <PressableFeedback
+          style={styles.botonExpandir}
+          onPress={onToggle}
+          accessibilityLabel={`Más opciones para ${item.producto?.nombre}`}
+        >
+          <Text style={styles.botonExpandirTexto}>{abierto ? '︿' : '⋯'}</Text>
+        </PressableFeedback>
       </View>
+
+      {abierto && (
+        <Animated.View
+          style={styles.expansion}
+          entering={FadeIn.duration(150)}
+          exiting={FadeOut.duration(150)}
+          layout={LinearTransition.duration(200)}
+        >
+          <Text style={styles.label}>Descuento</Text>
+          <DescuentoPicker
+            tipo={descuento.tipo}
+            valor={descuento.valor}
+            onChangeTipo={(tipo) => onCambiarDescuento({ ...descuento, tipo })}
+            onChangeValor={(valor) => onCambiarDescuento({ ...descuento, valor })}
+          />
+
+          <Text style={styles.label}>Supermercado</Text>
+          <SupermercadoPicker value={supermercadoId} onChange={onCambiarSupermercado} />
+        </Animated.View>
+      )}
     </Animated.View>
   );
 }
