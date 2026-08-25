@@ -1,6 +1,6 @@
 import { Check, ChevronLeft } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TextInput, Modal } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TextInput, Modal, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 import AgregarItemListaModal from './AgregarItemListaModal';
@@ -487,6 +487,12 @@ function FilaComprada({ item }: { item: DetalleListaItem }) {
   );
 }
 
+// 'fixed' en vez de 'absolute' en web: en RN Web, 'absolute' se posiciona
+// relativo al contenedor scrolleable de contenido, no al viewport — con
+// una lista larga el FAB terminaba scrolleando con el contenido en vez de
+// quedar flotando fijo. En nativo funciona bien con 'absolute'.
+const posicionFlotante = Platform.select({ web: 'fixed', default: 'absolute' }) as 'absolute';
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   header: {
@@ -620,7 +626,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   fab: {
-    position: 'absolute',
+    position: posicionFlotante,
     right: 20,
     bottom: 24,
     width: 58,

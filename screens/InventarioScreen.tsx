@@ -4,8 +4,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
+  ScrollView,
   StyleSheet,
   ActivityIndicator,
+  Platform,
   useWindowDimensions,
 } from 'react-native';
 import Animated, {
@@ -126,40 +128,44 @@ export default function InventarioScreen() {
   return (
     <View style={[styles.container, isDesktop && styles.containerDesktop]}>
       {isDesktop ? (
-        <View style={styles.desktopWrap}>
-          <View style={styles.desktopHeader}>
-            <View>
-              <Text style={styles.desktopTitulo}>Tu inventario</Text>
-              <Text style={styles.desktopSubtitulo}>
-                {items.length} {items.length === 1 ? 'producto' : 'productos'} en {secciones.length}{' '}
-                {secciones.length === 1 ? 'categoría' : 'categorías'}
-              </Text>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContentDesktop}>
+          <View style={styles.desktopWrap}>
+            <View style={styles.desktopHeader}>
+              <View>
+                <Text style={styles.desktopTitulo}>Tu inventario</Text>
+                <Text style={styles.desktopSubtitulo}>
+                  {items.length} {items.length === 1 ? 'producto' : 'productos'} en {secciones.length}{' '}
+                  {secciones.length === 1 ? 'categoría' : 'categorías'}
+                </Text>
+              </View>
+              <View style={styles.desktopBotones}>
+                <PressableFeedback
+                  style={styles.botonSecundario}
+                  onPress={() => setModalTicketVisible(true)}
+                >
+                  <Camera size={17} color={Colors.primary} strokeWidth={2.75} />
+                  <Text style={styles.botonSecundarioTexto}>Escanear ticket</Text>
+                </PressableFeedback>
+                <PressableFeedback style={styles.botonPrimario} onPress={() => setModalVisible(true)}>
+                  <Plus size={17} color={Colors.white} strokeWidth={2.75} />
+                  <Text style={styles.botonPrimarioTexto}>Agregar producto</Text>
+                </PressableFeedback>
+              </View>
             </View>
-            <View style={styles.desktopBotones}>
-              <PressableFeedback
-                style={styles.botonSecundario}
-                onPress={() => setModalTicketVisible(true)}
-              >
-                <Camera size={17} color={Colors.primary} strokeWidth={2.75} />
-                <Text style={styles.botonSecundarioTexto}>Escanear ticket</Text>
-              </PressableFeedback>
-              <PressableFeedback style={styles.botonPrimario} onPress={() => setModalVisible(true)}>
-                <Plus size={17} color={Colors.white} strokeWidth={2.75} />
-                <Text style={styles.botonPrimarioTexto}>Agregar producto</Text>
-              </PressableFeedback>
-            </View>
-          </View>
 
-          <View style={styles.desktopGrid}>
-            <View style={styles.desktopColumna}>{contenido}</View>
-            <RailDerecho items={items} />
+            <View style={styles.desktopGrid}>
+              <View style={styles.desktopColumna}>{contenido}</View>
+              <RailDerecho items={items} />
+            </View>
           </View>
-        </View>
+        </ScrollView>
       ) : (
         <>
-          <HeaderMobile />
-          {!loading && !error && items.length > 0 && <ChipsResumen resumen={resumen} />}
-          {contenido}
+          <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContentMobile}>
+            <HeaderMobile />
+            {!loading && !error && items.length > 0 && <ChipsResumen resumen={resumen} />}
+            {contenido}
+          </ScrollView>
 
           <PressableFeedback
             style={styles.fabTicket}
@@ -457,9 +463,26 @@ function RailDerecho({ items }: { items: InventarioItem[] }) {
   );
 }
 
+// 'fixed' en vez de 'absolute' en web: en RN Web, 'absolute' se posiciona
+// relativo al contenedor scrolleable de contenido, no al viewport — con
+// una lista larga el FAB terminaba scrolleando con el contenido en vez de
+// quedar flotando fijo. En nativo la pantalla ya es un contenedor con
+// altura real (el scroll es interno al FlatList/ScrollView), 'absolute'
+// funciona bien ahí — por eso el Platform.select en vez de un valor fijo.
+const posicionFlotante = Platform.select({ web: 'fixed', default: 'absolute' }) as 'absolute';
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  containerDesktop: { alignItems: 'center' },
+  containerDesktop: {},
+  // El body de la app tiene overflow:hidden a propósito (ver
+  // src/global.css) — cada pantalla necesita su propio ScrollView con
+  // flex:1 para poder scrollear contenido más alto que la ventana, no
+  // alcanza con un View plano. Sin esto el contenido que no entra queda
+  // inalcanzable (o, en algunos navegadores, "se cuela" con el scroll
+  // táctil elástico, tapando la tab bar/FABs a mitad de lista).
+  scroll: { flex: 1 },
+  scrollContentMobile: { paddingBottom: 110 },
+  scrollContentDesktop: { alignItems: 'center' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { color: Colors.error, textAlign: 'center', fontFamily: Fonts.medium },
   mensajeVacio: { textAlign: 'center', color: Colors.textSecondary, fontFamily: Fonts.medium, fontSize: 15 },
@@ -488,9 +511,9 @@ const styles = StyleSheet.create({
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 7, paddingHorizontal: 13, borderRadius: 999 },
   chipDot: { width: 8, height: 8, borderRadius: 4 },
   chipTexto: { fontFamily: Fonts.bold, fontSize: 12.5 },
-  listaMobile: { paddingHorizontal: 12, paddingBottom: 100 },
+  listaMobile: { paddingHorizontal: 12 },
   fab: {
-    position: 'absolute',
+    position: posicionFlotante,
     right: 20,
     bottom: 86,
     width: 58,
@@ -506,7 +529,7 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   fabTicket: {
-    position: 'absolute',
+    position: posicionFlotante,
     right: 24,
     bottom: 150,
     width: 46,

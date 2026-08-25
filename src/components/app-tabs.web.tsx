@@ -142,7 +142,12 @@ const sombraTabBar = {
 
 const styles = StyleSheet.create({
   mobileContainer: {
-    position: 'absolute',
+    // 'fixed' (no 'absolute'): en RN Web, 'absolute' se posiciona relativo
+    // al contenedor scrolleable de contenido, no al viewport — con una
+    // lista larga la tab bar terminaba scrolleando con el contenido en vez
+    // de quedar flotando fija abajo. Este archivo es .web.tsx (solo se
+    // bundlea en web), así que no hace falta un Platform.select.
+    position: 'fixed' as 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
@@ -160,7 +165,7 @@ const styles = StyleSheet.create({
     ...sombraTabBar,
   },
   desktopContainer: {
-    position: 'absolute',
+    position: 'fixed' as 'absolute', // mismo motivo que mobileContainer
     width: '100%',
     padding: 16,
     justifyContent: 'center',

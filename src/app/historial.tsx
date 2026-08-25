@@ -1,6 +1,6 @@
 import { Camera } from 'lucide-react-native';
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '../../constants/colors';
@@ -64,6 +64,12 @@ export default function HistorialTab() {
   );
 }
 
+// 'fixed' en vez de 'absolute' en web: en RN Web, 'absolute' se posiciona
+// relativo al contenedor scrolleable de contenido, no al viewport — con
+// una lista larga el FAB terminaba scrolleando con el contenido en vez de
+// quedar flotando fijo. En nativo funciona bien con 'absolute'.
+const posicionFlotante = Platform.select({ web: 'fixed', default: 'absolute' }) as 'absolute';
+
 const styles = StyleSheet.create({
   cuenta: {
     flexDirection: 'row',
@@ -75,7 +81,7 @@ const styles = StyleSheet.create({
   email: { color: Colors.textSecondary, fontSize: 12.5, fontFamily: Fonts.medium },
   botonTexto: { color: Colors.primary, fontFamily: Fonts.bold, fontSize: 13 },
   fab: {
-    position: 'absolute',
+    position: posicionFlotante,
     right: 24,
     bottom: 24,
     width: 46,
