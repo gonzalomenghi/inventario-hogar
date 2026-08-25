@@ -24,16 +24,24 @@ const OPCIONES: { valor: TipoDescuento; label: string; presetValor?: string }[] 
 // de CategoriaPicker/SupermercadoPicker). El campo de valor solo tiene
 // sentido para porcentaje/monto_fijo/descuento_2da_unidad/nxm — 'ninguno' y
 // '2x1' no lo usan en la fórmula de fn_calcular_precio_final.
+//
+// onChange es un único callback con (tipo, valor) — a propósito, no dos
+// callbacks separados. Un preset como "3x2" necesita cambiar tipo Y valor
+// a la vez ('nxm' + '3'); con dos callbacks (onChangeTipo, onChangeValor)
+// disparados en el mismo tap, el segundo se computaba sobre el prop
+// `tipo`/`valor` todavía viejo (React no re-renderiza entre uno y otro),
+// así que pisaba el cambio del primero — bug real: los chips "3x2"/"4x3"
+// nunca quedaban activos en callers que arman un solo objeto combinado a
+// partir del prop actual (ModoSupermercadoScreen). Con un solo callback
+// no hay ventana para que un cambio pise al otro.
 export default function DescuentoPicker({
   tipo,
   valor,
-  onChangeTipo,
-  onChangeValor,
+  onChange,
 }: {
   tipo: TipoDescuento;
   valor: string;
-  onChangeTipo: (tipo: TipoDescuento) => void;
-  onChangeValor: (valor: string) => void;
+  onChange: (tipo: TipoDescuento, valor: string) => void;
 }) {
   const mostrarValor =
     tipo === 'porcentaje' || tipo === 'monto_fijo' || tipo === 'descuento_2da_unidad' || tipo === 'nxm';
@@ -53,10 +61,7 @@ export default function DescuentoPicker({
                 activo && styles.chipActivo,
                 pressed && activo && styles.chipPressed,
               ]}
-              onPress={() => {
-                onChangeTipo(op.valor);
-                if (op.presetValor !== undefined) onChangeValor(op.presetValor);
-              }}
+              onPress={() => onChange(op.valor, op.presetValor ?? valor)}
             >
               <Text style={[styles.chipTexto, activo && styles.chipTextoActivo]}>{op.label}</Text>
             </PressableFeedback>
@@ -72,7 +77,7 @@ export default function DescuentoPicker({
           <TextInput
             style={styles.input}
             value={valor}
-            onChangeText={onChangeValor}
+            onChangeText={(v) => onChange(tipo, v)}
             keyboardType="decimal-pad"
             placeholder={placeholderValor}
           />

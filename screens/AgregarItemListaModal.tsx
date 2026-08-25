@@ -286,8 +286,10 @@ export default function AgregarItemListaModal({
                 <DescuentoPicker
                   tipo={tipoDescuento}
                   valor={valorDescuento}
-                  onChangeTipo={setTipoDescuento}
-                  onChangeValor={setValorDescuento}
+                  onChange={(tipo, valor) => {
+                    setTipoDescuento(tipo);
+                    setValorDescuento(valor);
+                  }}
                 />
 
                 <Text style={styles.label}>Supermercado (opcional)</Text>

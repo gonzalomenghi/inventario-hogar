@@ -554,8 +554,7 @@ function FilaPendiente({
           <DescuentoPicker
             tipo={descuento.tipo}
             valor={descuento.valor}
-            onChangeTipo={(tipo) => onCambiarDescuento({ ...descuento, tipo })}
-            onChangeValor={(valor) => onCambiarDescuento({ ...descuento, valor })}
+            onChange={(tipo, valor) => onCambiarDescuento({ tipo, valor })}
           />
 
           {mostrarPreview && (
@@ -657,8 +656,7 @@ function FilaComprada({
           <DescuentoPicker
             tipo={descuento.tipo}
             valor={descuento.valor}
-            onChangeTipo={(tipo) => onCambiarDescuento({ ...descuento, tipo })}
-            onChangeValor={(valor) => onCambiarDescuento({ ...descuento, valor })}
+            onChange={(tipo, valor) => onCambiarDescuento({ tipo, valor })}
           />
 
           <Text style={styles.label}>Supermercado</Text>
