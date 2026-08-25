@@ -1,0 +1,31 @@
+name: Recordatorio sync SEPA
+
+# Corre en un runner hosteado normal (no necesita el self-hosted: mandar
+# un mail no toca datos.produccion.gob.ar). 30 min antes del sync real
+# (sync-catalogo-sepa.yml, lunes 11:00 ART) para que el usuario tenga
+# tiempo de prender la PC — ese workflow no corre solo si el runner
+# self-hosted no está online.
+on:
+  schedule:
+    - cron: '30 13 * * 1' # 13:30 UTC = 10:30 ART, todos los lunes
+  workflow_dispatch: {}
+
+jobs:
+  recordatorio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: gmenghi40@gmail.com
+          password: ${{ secrets.GMAIL_APP_PASSWORD }}
+          from: AlacenaApp — Sync SEPA <gmenghi40@gmail.com>
+          to: gmenghi40@gmail.com
+          subject: 'Prendé la PC — sync de SEPA en 30 min'
+          body: |
+            El sync semanal del catálogo SEPA corre hoy a las 11:00 (ART).
+
+            Corre en el runner self-hosted de tu PC — si está apagada o el
+            runner no está corriendo, el job de esta semana no se dispara
+            (se salta, no queda pendiente para más tarde).

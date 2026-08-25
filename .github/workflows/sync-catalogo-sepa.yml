@@ -1,21 +1,33 @@
 name: Sync catálogo SEPA
 
-# Corre como GitHub Actions y no como Edge Function de Supabase a
-# propósito: el ZIP nacional del dataset pesa 300MB+ comprimidos y un solo
-# comercio grande ya tiene millones de filas de producto — muy por encima
-# de lo que una Edge Function (límite de ejecución ~150s, memoria acotada)
-# puede procesar. Ver scripts/sync-catalogo-sepa.mjs para el detalle.
+# Corre en un runner self-hosted (la PC del usuario), no en un runner
+# hosteado de GitHub ni en una Edge Function de Supabase — datos.produccion.gob.ar
+# bloquea el tráfico desde IPs de datacenter conocidas (confirmado: 403
+# real contra un runner hosteado de GitHub, egress IP de Azure). Desde una
+# red residencial/casera funciona sin problema. Ver
+# scripts/sync-catalogo-sepa.mjs para el resto del contexto (por qué
+# tampoco es viable como Edge Function).
+#
+# Solo lunes 11:00 ART — ver también sepa-reminder.yml, que manda un mail
+# de aviso 30 min antes para no depender de que el usuario se acuerde solo
+# de prender la PC (este workflow no corre si el runner self-hosted no
+# está online).
 on:
   schedule:
-    # 12:00 UTC = 09:00 ART, con margen después del horario límite de
-    # envío de los comercios a SEPA (10:00 ART como máximo con rectificación).
-    - cron: '0 12 * * *'
+    - cron: '0 14 * * 1' # 14:00 UTC = 11:00 ART, todos los lunes
   workflow_dispatch: {}
 
 jobs:
   sync:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 30
+    defaults:
+      run:
+        # El script usa `unzip`/`cp` (ver sync-catalogo-sepa.mjs) — en un
+        # runner self-hosted Windows el shell por defecto es PowerShell,
+        # que no los tiene. Se fuerza Git Bash (ya instalado en la máquina,
+        # es lo que usa Claude Code ahí mismo).
+        shell: bash
     steps:
       - uses: actions/checkout@v4
 
