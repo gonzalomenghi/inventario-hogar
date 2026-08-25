@@ -1,7 +1,9 @@
+import { Pencil, Plus } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import PressableFeedback from './PressableFeedback';
 import { Colors } from '../constants/colors';
+import { Fonts } from '../constants/typography';
 import { useCategorias } from '../hooks/useCategorias';
 import type { Categoria } from '../types/database.types';
 
@@ -93,7 +95,11 @@ export default function CategoriaPicker({
           {categorias.map((cat) => (
             <View key={cat.id} style={styles.chipConLapiz}>
               <PressableFeedback
-                style={[styles.chip, value === cat.id && styles.chipActivo]}
+                style={({ pressed }) => [
+                  styles.chip,
+                  value === cat.id && styles.chipActivo,
+                  pressed && value === cat.id && styles.chipPressed,
+                ]}
                 onPress={() => onChange(cat.id)}
                 onLongPress={() => abrirEdicion(cat)}
               >
@@ -106,13 +112,13 @@ export default function CategoriaPicker({
                 onPress={() => abrirEdicion(cat)}
                 accessibilityLabel={`Editar categoría ${cat.nombre}`}
               >
-                <Text style={styles.lapizTexto}>✏️</Text>
+                <Pencil size={12} color={Colors.textSecondary} strokeWidth={2.75} />
               </PressableFeedback>
             </View>
           ))}
 
           <PressableFeedback style={styles.chipNueva} onPress={abrirAlta}>
-            <Text style={styles.chipNuevaTexto}>+</Text>
+            <Plus size={16} color={Colors.primary} strokeWidth={2.75} />
           </PressableFeedback>
         </View>
       )}
@@ -168,58 +174,55 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 4 },
   chipConLapiz: { flexDirection: 'row', alignItems: 'center' },
   chip: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 20,
+    backgroundColor: Colors.background,
+    borderRadius: 999,
     paddingVertical: 8,
     paddingHorizontal: 14,
   },
-  chipActivo: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  chipTexto: { color: Colors.textPrimary, fontWeight: '600' },
-  chipTextoActivo: { color: Colors.white },
+  chipActivo: { backgroundColor: Colors.primary },
+  chipPressed: { backgroundColor: Colors.primaryDark },
+  chipTexto: { color: Colors.textPrimary, fontFamily: Fonts.semibold, fontSize: 13 },
+  chipTextoActivo: { color: Colors.white, fontFamily: Fonts.bold },
   lapiz: { paddingHorizontal: 4, paddingVertical: 4, marginLeft: -8 },
-  lapizTexto: { fontSize: 12 },
   chipNueva: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 20,
+    backgroundColor: Colors.backgroundMuted,
+    borderRadius: 999,
     width: 36,
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chipNuevaTexto: { color: Colors.primary, fontWeight: '700', fontSize: 16 },
-  error: { color: Colors.error, fontSize: 13, marginTop: 4 },
+  error: { color: Colors.error, fontSize: 13, marginTop: 4, fontFamily: Fonts.medium },
   form: {
     marginTop: 8,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 16,
     backgroundColor: Colors.backgroundMuted,
     gap: 8,
   },
-  formTitulo: { fontSize: 13, fontWeight: '700', color: Colors.textSecondary },
+  formTitulo: { fontSize: 13, fontFamily: Fonts.bold, color: Colors.textSecondary },
   formFila: { flexDirection: 'row', gap: 8 },
   input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
+    borderRadius: 999,
     padding: 10,
     fontSize: 15,
+    fontFamily: Fonts.medium,
+    color: Colors.textPrimary,
     backgroundColor: Colors.white,
   },
   inputIcono: { width: 56, textAlign: 'center' },
-  inputNombre: { flex: 1 },
+  inputNombre: { flex: 1, paddingHorizontal: 16 },
   formBotones: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
   botonCancelar: { paddingVertical: 10, paddingHorizontal: 14 },
-  botonCancelarTexto: { color: Colors.textSecondary, fontWeight: '600' },
+  botonCancelarTexto: { color: Colors.textSecondary, fontFamily: Fonts.semibold },
   botonGuardar: {
     backgroundColor: Colors.primary,
-    borderRadius: 8,
+    borderRadius: 999,
     paddingVertical: 10,
     paddingHorizontal: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
   botonDisabled: { opacity: 0.5 },
-  botonGuardarTexto: { color: Colors.white, fontWeight: '700' },
+  botonGuardarTexto: { color: Colors.white, fontFamily: Fonts.bold },
 });

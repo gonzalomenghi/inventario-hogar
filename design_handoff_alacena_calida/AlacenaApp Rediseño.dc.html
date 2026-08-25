@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&amp;family=Spline+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#f0eee9;font-family:Quicksand,system-ui,sans-serif}
+a{color:#c1552c}a:hover{color:#9c3f1d}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55)}
+.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">AlacenaApp — recreación de la UI actual + rediseño "Alacena Cálida"</span></div>
+<div style="max-width:860px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:20px 24px;margin-bottom:26px;font:13px/1.6 system-ui,sans-serif;color:#333">
+<strong style="font-family:Quicksand,sans-serif;font-size:15px;color:#2a1e1a">Supuestos y dirección</strong><br>
+Recreé la UI actual desde el código del repo (fila de arriba) y encima construí una dirección pulida: mantengo el logo, el terracota <span style="color:#c1552c;font-weight:600">#c1552c</span> y Quicksand de la guía de marca, subo la calidez (fondo crema #fcf4eb, pills, esquinas redondas, halos en el semáforo) y ordeno la jerarquía: resumen de estado arriba, steppers en pill, tab bar flotante con iconos, progreso visible en Modo Supermercado y gráfico de barras en Historial. <a href="#1f">1f</a> es interactivo: tocá −/+, colapsá categorías y abrí el "+".
+</div>
+<div style="font:600 12px system-ui,sans-serif;color:rgba(0,0,0,.45);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">UI actual (recreación fiel)</div>
+<div class="dv-opts" style="margin-bottom:34px">
+
+<div class="dv-opt" id="1a" data-screen-label="Actual — Login"><div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Actual · Login</div>
+<div class="dv-card" style="width:390px;border-radius:24px"><div style="height:720px;background:#fff;display:flex;flex-direction:column;justify-content:center;padding:24px;box-sizing:border-box;gap:12px;font-family:'Spline Sans',Inter,system-ui,sans-serif">
+<img src="assets/images/logo-horizontal.png" alt="AlacenaApp" style="width:240px;height:60px;object-fit:contain;align-self:center;margin-bottom:28px">
+<input placeholder="Email" style="border:1px solid #D1D5DB;border-radius:8px;padding:12px;font-size:16px;font-family:inherit">
+<input placeholder="Contraseña" type="password" style="border:1px solid #D1D5DB;border-radius:8px;padding:12px;font-size:16px;font-family:inherit">
+<div style="background:#c1552c;border-radius:8px;padding:14px;text-align:center;color:#fff;font-weight:700;font-size:16px;margin-top:8px;opacity:.5">Iniciar sesión</div>
+<div style="text-align:center;color:#c1552c;margin-top:16px;font-size:14px">¿No tenés cuenta? Creá una</div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:20px"><div style="flex:1;height:1px;background:#D1D5DB"></div><span style="color:#6B7280;font-size:13px">o</span><div style="flex:1;height:1px;background:#D1D5DB"></div></div>
+<div style="border:1px solid #D1D5DB;border-radius:8px;padding:14px;text-align:center;font-weight:600;font-size:16px;color:#2a1e1a;margin-top:16px">Continuar con Google</div>
+</div></div></div>
+
+<div class="dv-opt" id="1b" data-screen-label="Actual — Inventario"><div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Actual · Inventario (con tab bar web)</div>
+<div class="dv-card" style="width:390px;border-radius:24px"><div style="height:720px;background:#fff;position:relative;overflow:hidden;font-family:'Spline Sans',Inter,system-ui,sans-serif">
+<div style="position:absolute;top:0;left:0;right:0;padding:16px;display:flex;justify-content:center;z-index:2">
+<div style="background:#F0F0F3;border-radius:32px;padding:8px 32px 8px 16px;display:flex;align-items:center;gap:8px;flex-grow:1">
+<div style="display:flex;align-items:center;gap:4px;margin-right:auto"><img src="assets/images/logo.png" alt="" style="width:22px;height:22px"><span style="font-size:14px;font-weight:700;color:#000">AlacenaApp</span></div>
+<div style="background:#E0E1E6;border-radius:16px;padding:4px 16px;font-size:13px;font-weight:500;color:#000">Inventario</div>
+<div style="border-radius:16px;padding:4px 12px;font-size:13px;color:#60646C">Supermercado</div>
+<div style="border-radius:16px;padding:4px 12px;font-size:13px;color:#60646C">Historial</div>
+</div></div>
+<div style="padding:84px 0 32px">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px"><span style="font-size:14px;font-weight:700;text-transform:uppercase;color:#6B7280">🍎 Alimentos (4)</span><span style="font-size:13px;color:#6B7280">▾</span></div>
+<div style="display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;background:#fff;margin:0 12px 6px;padding:10px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)"><div style="width:12px;height:12px;border-radius:6px;background:#30A46C;margin-right:12px"></div><div style="flex:1"><div style="font-size:16px;font-weight:600;color:#000">Arroz largo fino</div><div style="font-size:13px;color:#6B7280;margin-top:2px">2 unidad</div></div><div style="display:flex;gap:8px"><div style="width:32px;height:32px;border-radius:16px;background:#f3e5d6;display:grid;place-items:center;font-size:18px;font-weight:700;color:#2a1e1a">−</div><div style="width:32px;height:32px;border-radius:16px;background:#f3e5d6;display:grid;place-items:center;font-size:18px;font-weight:700;color:#2a1e1a">+</div></div></div>
+<div style="display:flex;align-items:center;background:#fff;margin:0 12px 6px;padding:10px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)"><div style="width:12px;height:12px;border-radius:6px;background:#F5A623;margin-right:12px"></div><div style="flex:1"><div style="font-size:16px;font-weight:600;color:#000">Fideos spaghetti</div><div style="font-size:13px;color:#6B7280;margin-top:2px">1 unidad</div></div><div style="display:flex;gap:8px"><div style="width:32px;height:32px;border-radius:16px;background:#f3e5d6;display:grid;place-items:center;font-size:18px;font-weight:700;color:#2a1e1a">−</div><div style="width:32px;height:32px;border-radius:16px;background:#f3e5d6;display:grid;place-items:center;font-size:18px;font-weight:700;color:#2a1e1a">+</div></div></div>
+<div style="display:flex;align-items:center;background:#fff;margin:0 12px 6px;padding:10px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)"><div style="width:12px;height:12px;border-radius:6px;background:#E5484D;margin-right:12px"></div><div style="flex:1"><div style="font-size:16px;font-weight:600;color:#000">Aceite de girasol</div><div style="font-size:13px;color:#6B7280;margin-top:2px">0 litro · vence 2026-09-10</div></div><div style="display:flex;gap:8px"><div style="width:32px;height:32px;border-radius:16px;background:#f3e5d6;display:grid;place-items:center;font-size:18px;font-weight:700;color:#2a1e1a">−</div><div style="width:32px;height:32px;border-radius:16px;background:#f3e5d6;display:grid;place-items:center;font-size:18px;font-weight:700;color:#2a1e1a">+</div></div></div>
+<div style="display:flex;align-items:center;background:#fff;margin:0 12px 6px;padding:10px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)"><div style="width:12px;height:12px;border-radius:6px;background:#30A46C;margin-right:12px"></div><div style="flex:1"><div style="font-size:16px;font-weight:600;color:#000">Yerba mate</div><div style="font-size:13px;color:#6B7280;margin-top:2px">3 unidad</div></div><div style="display:flex;gap:8px"><div style="width:32px;height:32px;border-radius:16px;background:#f3e5d6;display:grid;place-items:center;font-size:18px;font-weight:700;color:#2a1e1a">−</div><div style="width:32px;height:32px;border-radius:16px;background:#f3e5d6;display:grid;place-items:center;font-size:18px;font-weight:700;color:#2a1e1a">+</div></div></div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 8px"><span style="font-size:14px;font-weight:700;text-transform:uppercase;color:#6B7280">🧴 Limpieza (2)</span><span style="font-size:13px;color:#6B7280">▾</span></div>
+<div style="display:flex;align-items:center;background:#fff;margin:0 12px 6px;padding:10px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)"><div style="width:12px;height:12px;border-radius:6px;background:#F5A623;margin-right:12px"></div><div style="flex:1"><div style="font-size:16px;font-weight:600;color:#000">Detergente</div><div style="font-size:13px;color:#6B7280;margin-top:2px">1 unidad</div></div><div style="display:flex;gap:8px"><div style="width:32px;height:32px;border-radius:16px;background:#f3e5d6;display:grid;place-items:center;font-size:18px;font-weight:700;color:#2a1e1a">−</div><div style="width:32px;height:32px;border-radius:16px;background:#f3e5d6;display:grid;place-items:center;font-size:18px;font-weight:700;color:#2a1e1a">+</div></div></div>
+<div style="display:flex;align-items:center;background:#fff;margin:0 12px 6px;padding:10px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)"><div style="width:12px;height:12px;border-radius:6px;background:#30A46C;margin-right:12px"></div><div style="flex:1"><div style="font-size:16px;font-weight:600;color:#000">Lavandina</div><div style="font-size:13px;color:#6B7280;margin-top:2px">2 litro</div></div><div style="display:flex;gap:8px"><div style="width:32px;height:32px;border-radius:16px;background:#f3e5d6;display:grid;place-items:center;font-size:18px;font-weight:700;color:#2a1e1a">−</div><div style="width:32px;height:32px;border-radius:16px;background:#f3e5d6;display:grid;place-items:center;font-size:18px;font-weight:700;color:#2a1e1a">+</div></div></div>
+</div>
+<div style="position:absolute;right:20px;bottom:92px;width:48px;height:48px;border-radius:24px;background:#fff;display:grid;place-items:center;font-size:20px;box-shadow:0 2px 6px rgba(0,0,0,.15)">📷</div>
+<div style="position:absolute;right:20px;bottom:24px;width:56px;height:56px;border-radius:28px;background:#c1552c;display:grid;place-items:center;color:#fff;font-size:28px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.2)">+</div>
+</div></div></div>
+
+<div class="dv-opt" id="1c" data-screen-label="Actual — Modo Supermercado"><div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Actual · Modo Supermercado</div>
+<div class="dv-card" style="width:390px;border-radius:24px"><div style="height:720px;background:#fff;position:relative;overflow:hidden;font-family:'Spline Sans',Inter,system-ui,sans-serif;padding-top:76px;box-sizing:border-box">
+<div style="padding:8px 12px 0"><span style="color:#c1552c;font-weight:600;font-size:15px">‹ Salir</span></div>
+<div style="padding:12px">
+<div style="margin-bottom:12px"><div style="font-size:14px;color:#6B7280;font-weight:600">2 / 5 comprados</div><div style="font-size:16px;color:#2a1e1a;font-weight:700;margin-top:2px">Total estimado: $18450.00 <span style="font-size:12px;color:#6B7280;font-weight:400">(1 sin precio cargado)</span></div></div>
+<div style="background:#fff;padding:10px;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.06)"><div style="display:flex;align-items:center"><div style="width:26px;height:26px;border-radius:13px;border:2px solid #D1D5DB;margin-right:12px;box-sizing:border-box"></div><div style="flex:1"><div style="font-size:16px;font-weight:600">Aceite de girasol</div><div style="font-size:13px;color:#6B7280;margin-top:2px">1 litro</div></div><input placeholder="$" style="width:64px;border:1px solid #D1D5DB;border-radius:8px;padding:6px;text-align:right;font-family:inherit;box-sizing:border-box"><span style="padding:6px 8px;margin-left:4px;font-size:16px;color:#6B7280;font-weight:700">⋯</span></div></div>
+<div style="background:#fff;padding:10px;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.06)"><div style="display:flex;align-items:center"><div style="width:26px;height:26px;border-radius:13px;border:2px solid #D1D5DB;margin-right:12px;box-sizing:border-box"></div><div style="flex:1"><div style="font-size:16px;font-weight:600">Papel higiénico</div><div style="font-size:13px;color:#6B7280;margin-top:2px">2 paquete</div></div><input placeholder="$" style="width:64px;border:1px solid #D1D5DB;border-radius:8px;padding:6px;text-align:right;font-family:inherit;box-sizing:border-box"><span style="padding:6px 8px;margin-left:4px;font-size:16px;color:#6B7280;font-weight:700">⋯</span></div>
+<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f3e5d6"><div style="font-size:13px;color:#6B7280;margin-bottom:6px">Descuento</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"><span style="border:1px solid #c1552c;background:#c1552c;color:#fff;border-radius:20px;padding:8px 14px;font-weight:600;font-size:13px">Sin descuento</span><span style="border:1px solid #D1D5DB;border-radius:20px;padding:8px 14px;font-weight:600;font-size:13px;color:#2a1e1a">2x1</span><span style="border:1px solid #D1D5DB;border-radius:20px;padding:8px 14px;font-weight:600;font-size:13px;color:#2a1e1a">3x2</span><span style="border:1px solid #D1D5DB;border-radius:20px;padding:8px 14px;font-weight:600;font-size:13px;color:#2a1e1a">% descuento</span></div><div style="font-size:13px;color:#6B7280;margin-bottom:6px">Supermercado</div><div style="display:flex;gap:8px"><span style="border:1px solid #c1552c;background:#c1552c;color:#fff;border-radius:20px;padding:8px 14px;font-weight:600;font-size:13px">Coto</span><span style="border:1px solid #D1D5DB;border-radius:20px;padding:8px 14px;font-weight:600;font-size:13px;color:#2a1e1a">Dia</span><span style="border:1px solid #D1D5DB;border-radius:20px;width:36px;height:36px;display:inline-grid;place-items:center;color:#c1552c;font-weight:700;box-sizing:border-box">+</span></div></div></div>
+<div style="background:#fff;padding:10px;border-radius:12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.06)"><div style="display:flex;align-items:center"><div style="width:26px;height:26px;border-radius:13px;border:2px solid #D1D5DB;margin-right:12px;box-sizing:border-box"></div><div style="flex:1"><div style="font-size:16px;font-weight:600">Leche entera</div><div style="font-size:13px;color:#6B7280;margin-top:2px">6 litro</div></div><input placeholder="$" style="width:64px;border:1px solid #D1D5DB;border-radius:8px;padding:6px;text-align:right;font-family:inherit;box-sizing:border-box"><span style="padding:6px 8px;margin-left:4px;font-size:16px;color:#6B7280;font-weight:700">⋯</span></div></div>
+<div style="background:#fff;padding:10px;border-radius:12px;margin-bottom:6px;opacity:.5;box-shadow:0 1px 4px rgba(0,0,0,.06)"><div style="display:flex;align-items:center"><div style="width:26px;height:26px;border-radius:13px;background:#30A46C;margin-right:12px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px">✓</div><div style="flex:1"><div style="font-size:16px;font-weight:600;text-decoration:line-through">Arroz largo fino</div><div style="font-size:13px;color:#6B7280;margin-top:2px">2 unidad</div></div></div></div>
+<div style="background:#fff;padding:10px;border-radius:12px;margin-bottom:6px;opacity:.5;box-shadow:0 1px 4px rgba(0,0,0,.06)"><div style="display:flex;align-items:center"><div style="width:26px;height:26px;border-radius:13px;background:#30A46C;margin-right:12px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px">✓</div><div style="flex:1"><div style="font-size:16px;font-weight:600;text-decoration:line-through">Detergente</div><div style="font-size:13px;color:#6B7280;margin-top:2px">1 unidad</div></div></div></div>
+</div>
+<div style="position:absolute;right:20px;bottom:24px;width:56px;height:56px;border-radius:28px;background:#c1552c;display:grid;place-items:center;color:#fff;font-size:28px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.2)">+</div>
+</div></div></div>
+
+<div class="dv-opt" id="1d" data-screen-label="Actual — Historial"><div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Actual · Historial</div>
+<div class="dv-card" style="width:390px;border-radius:24px"><div style="height:720px;background:#fff;position:relative;overflow:hidden;font-family:'Spline Sans',Inter,system-ui,sans-serif;padding-top:76px;box-sizing:border-box;display:flex;flex-direction:column">
+<div style="flex:1;padding:16px;display:flex;flex-direction:column;gap:16px">
+<div style="background:#fff;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+<div style="font-size:13px;font-weight:700;text-transform:uppercase;color:#6B7280;margin-bottom:4px">Gasto por mes</div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0"><div><div style="font-size:15px;font-weight:600;color:#2a1e1a">agosto 2026</div><div style="font-size:13px;color:#6B7280">3 compras</div></div><span style="font-size:16px;font-weight:700;color:#2a1e1a">$118.320,50</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0"><div><div style="font-size:15px;font-weight:600;color:#2a1e1a">julio 2026</div><div style="font-size:13px;color:#6B7280">5 compras</div></div><span style="font-size:16px;font-weight:700;color:#2a1e1a">$195.840,00</span></div>
+</div>
+<div style="background:#fff;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+<div style="font-size:13px;font-weight:700;text-transform:uppercase;color:#6B7280;margin-bottom:4px">Mejor supermercado por producto</div>
+<div><div style="font-size:15px;font-weight:600;color:#2a1e1a">Leche entera</div><div style="font-size:13px;color:#6B7280">Dia · $1.450,00 prom.</div></div>
+<div><div style="font-size:15px;font-weight:600;color:#2a1e1a">Arroz largo fino</div><div style="font-size:13px;color:#6B7280">Coto · $2.100,00 prom.</div></div>
+</div>
+<div style="background:#fff;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+<div style="font-size:13px;font-weight:700;text-transform:uppercase;color:#6B7280;margin-bottom:4px">Tendencia de precios</div>
+<div><div style="font-size:15px;font-weight:600;color:#2a1e1a">Aceite de girasol</div><div style="font-size:13px;color:#E5484D">$4.890,00 · +12% vs. anterior</div></div>
+<div><div style="font-size:15px;font-weight:600;color:#2a1e1a">Yerba mate</div><div style="font-size:13px;color:#30A46C">$3.200,00 · -5% vs. anterior</div></div>
+</div>
+</div>
+<div style="border-top:1px solid #f3e5d6;padding:16px;display:flex;flex-direction:column;align-items:center;gap:8px"><span style="color:#6B7280;font-size:13px">gonzalo@ejemplo.com</span><span style="border:1px solid #D1D5DB;border-radius:8px;padding:10px 20px;color:#E5484D;font-weight:600;font-size:14px">Cerrar sesión</span></div>
+<div style="position:absolute;right:20px;bottom:96px;width:56px;height:56px;border-radius:28px;background:#c1552c;display:grid;place-items:center;font-size:24px;box-shadow:0 2px 6px rgba(0,0,0,.2)">📷</div>
+</div></div></div>
+
+<div class="dv-opt" id="1e" data-screen-label="Actual — Modales"><div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Actual · Modales (agregar / detalle / ticket)</div>
+<div style="display:flex;gap:14px;align-items:flex-end">
+<div class="dv-card" style="width:340px;border-radius:16px 16px 8px 8px"><div style="background:#fff;padding:20px;font-family:'Spline Sans',Inter,system-ui,sans-serif">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-size:18px;font-weight:700">Agregar producto</span><span style="color:#c1552c;font-weight:600;font-size:14px">Cerrar</span></div>
+<input placeholder="Buscar producto (ej: arroz)" value="arroz" style="width:100%;border:1px solid #D1D5DB;border-radius:8px;padding:12px;font-size:16px;margin-bottom:12px;box-sizing:border-box;font-family:inherit">
+<div style="padding:12px 4px;border-bottom:1px solid #f3e5d6;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:15px;font-weight:600">Arroz largo fino</div><div style="font-size:13px;color:#6B7280">Alimentos</div></div></div>
+<div style="padding:12px 4px;border-bottom:1px solid #f3e5d6;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:15px;font-weight:600">Arroz integral 1kg</div><div style="font-size:13px;color:#6B7280">Alimentos</div></div><span style="background:#f3e5d6;border-radius:6px;padding:3px 8px;font-size:11px;color:#6B7280;font-weight:600">catálogo</span></div>
+<div style="padding:14px 0;color:#c1552c;font-weight:600;font-size:14px">+ Crear "arroz" como producto nuevo</div>
+</div></div>
+<div class="dv-card" style="width:340px;border-radius:16px 16px 8px 8px"><div style="background:#fff;padding:20px;font-family:'Spline Sans',Inter,system-ui,sans-serif">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-size:18px;font-weight:700">Detalle del producto</span><span style="color:#c1552c;font-weight:600;font-size:14px">Cerrar</span></div>
+<div style="font-size:18px;font-weight:700;margin-bottom:8px">Yerba mate</div>
+<div style="font-size:14px;color:#6B7280;margin-bottom:4px">Marca: Playadito</div>
+<div style="font-size:14px;color:#6B7280;margin-bottom:4px">Cantidad actual: 3 unidad</div>
+<div style="margin-top:16px;padding-top:16px;border-top:1px solid #f3e5d6">
+<div style="font-size:13px;color:#6B7280;margin-bottom:6px">Categoría</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><span style="border:1px solid #c1552c;background:#c1552c;color:#fff;border-radius:20px;padding:8px 14px;font-weight:600;font-size:13px">🍎 Alimentos</span><span style="border:1px solid #D1D5DB;border-radius:20px;padding:8px 14px;font-weight:600;font-size:13px">🧴 Limpieza</span></div>
+<div style="background:#c1552c;border-radius:8px;padding:12px;text-align:center;color:#fff;font-weight:700;font-size:15px">Guardar categoría</div></div>
+<div style="margin-top:16px;padding-top:16px;border-top:1px solid #f3e5d6">
+<div style="font-size:13px;color:#6B7280;margin-bottom:6px">Stock mínimo (para el semáforo)</div>
+<input value="1" style="width:100%;border:1px solid #D1D5DB;border-radius:8px;padding:12px;font-size:16px;margin-bottom:8px;box-sizing:border-box;font-family:inherit">
+<div style="background:#c1552c;border-radius:8px;padding:12px;text-align:center;color:#fff;font-weight:700;font-size:15px">Guardar cambios</div></div>
+<div style="text-align:center;padding:8px;margin-top:16px;color:#E5484D;font-weight:600;font-size:14px">Eliminar del inventario</div>
+</div></div>
+<div class="dv-card" style="width:340px;border-radius:16px 16px 8px 8px"><div style="background:#fff;padding:20px;font-family:'Spline Sans',Inter,system-ui,sans-serif">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><span style="font-size:18px;font-weight:700">Escanear ticket</span><span style="color:#c1552c;font-weight:600;font-size:14px">Cerrar</span></div>
+<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px">
+<div style="border:1px solid #D1D5DB;border-radius:8px;padding:14px;text-align:center;font-weight:600;font-size:15px">📷 Sacar foto</div>
+<div style="border:1px solid #D1D5DB;border-radius:8px;padding:14px;text-align:center;font-weight:600;font-size:15px">🖼️ Elegir de galería</div>
+<div style="border:1px solid #D1D5DB;border-radius:8px;padding:14px;text-align:center;font-weight:600;font-size:15px">📄 Elegir PDF</div>
+</div>
+</div></div>
+</div></div>
+</div>
+
+<div style="font:600 12px system-ui,sans-serif;color:rgba(0,0,0,.45);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Rediseño "Alacena Cálida" — mobile</div>
+<div class="dv-opts" style="margin-bottom:34px">
+
+<div class="dv-opt" id="1f" data-screen-label="Rediseño — Inventario (interactivo)"><div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Rediseño · Inventario — <strong>interactivo</strong>: tocá −/+, colapsá, abrí el +</div>
+<div class="dv-card" style="width:390px;border-radius:28px;box-shadow:0 8px 30px rgba(42,30,26,.12)"><div style="height:760px;background:#fcf4eb;position:relative;overflow:hidden;display:flex;flex-direction:column">
+<div style="padding:18px 20px 6px;display:flex;align-items:center;justify-content:space-between">
+<div style="display:flex;align-items:center;gap:10px"><img src="assets/images/logo.png" alt="" style="width:30px;height:30px"><div><div style="font-size:12px;color:#a08a7d;font-weight:600">Tu alacena</div><div style="font-size:21px;font-weight:700;color:#2a1e1a;line-height:1.1">Inventario</div></div></div>
+<div style="width:38px;height:38px;border-radius:999px;background:#f3e5d6;display:grid;place-items:center;color:#c1552c;font-weight:700;font-size:14px">GM</div>
+</div>
+<div style="display:flex;gap:8px;padding:10px 20px 4px">
+<div style="display:flex;align-items:center;gap:6px;background:#fbe4e4;border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700;color:#a92e33"><span style="width:8px;height:8px;border-radius:99px;background:#E5484D"></span>{{ nRojo }} para reponer</div>
+<div style="display:flex;align-items:center;gap:6px;background:#fdf0d5;border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700;color:#9a6b0a"><span style="width:8px;height:8px;border-radius:99px;background:#F5A623"></span>{{ nAmarillo }} justos</div>
+<div style="display:flex;align-items:center;gap:6px;background:#ddefe3;border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:700;color:#1e7a4d"><span style="width:8px;height:8px;border-radius:99px;background:#30A46C"></span>{{ nVerde }} ok</div>
+</div>
+<div style="flex:1;overflow-y:auto;padding:8px 16px 120px">
+<sc-for list="{{ cats }}" as="cat" hint-placeholder-count="3">
+<div style="background:#fff;border-radius:20px;margin-bottom:12px;box-shadow:0 2px 10px rgba(42,30,26,.06);overflow:hidden">
+<div onClick="{{ cat.toggle }}" style="display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer" style-hover="background:#fcf7f0">
+<div style="width:38px;height:38px;border-radius:999px;background:#f3e5d6;display:grid;place-items:center;font-size:18px">{{ cat.icono }}</div>
+<div style="flex:1;font-size:16px;font-weight:700;color:#2a1e1a">{{ cat.nombre }}</div>
+<div style="background:#fcf4eb;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;color:#a08a7d">{{ cat.count }}</div>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a08a7d" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s;transform:rotate({{ cat.rot }}deg)"><path d="M6 9l6 6 6-6"></path></svg>
+</div>
+<sc-if value="{{ cat.abierta }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:2px;padding:0 8px 8px">
+<sc-for list="{{ cat.items }}" as="it" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:14px" style-hover="background:#fcf7f0">
+<div style="width:11px;height:11px;border-radius:99px;background:{{ it.color }};box-shadow:0 0 0 4px {{ it.halo }}"></div>
+<div style="flex:1;min-width:0"><div style="font-size:15.5px;font-weight:600;color:#2a1e1a">{{ it.nombre }}</div><div style="font-size:12.5px;color:#a08a7d;font-weight:500">{{ it.detalle }}</div></div>
+<div style="display:flex;align-items:center;background:#f3e5d6;border-radius:999px;padding:3px">
+<div onClick="{{ it.menos }}" style="width:30px;height:30px;border-radius:999px;display:grid;place-items:center;cursor:pointer;color:#2a1e1a" style-hover="background:#e9d5bd" style-active="background:#dfc6a8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round"><path d="M5 12h14"></path></svg></div>
+<div style="min-width:26px;text-align:center;font-size:14.5px;font-weight:700;color:#2a1e1a">{{ it.cant }}</div>
+<div onClick="{{ it.mas }}" style="width:30px;height:30px;border-radius:999px;display:grid;place-items:center;cursor:pointer;color:#2a1e1a" style-hover="background:#e9d5bd" style-active="background:#dfc6a8"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></div>
+</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+<div onClick="{{ abrirSheet }}" style="position:absolute;right:18px;bottom:150px;width:46px;height:46px;border-radius:999px;background:#fff;display:grid;place-items:center;color:#c1552c;box-shadow:0 4px 14px rgba(42,30,26,.16);cursor:pointer" style-hover="background:#fcf7f0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></div>
+<div onClick="{{ abrirSheet }}" style="position:absolute;right:14px;bottom:86px;width:58px;height:58px;border-radius:999px;background:#c1552c;display:grid;place-items:center;color:#fff;box-shadow:0 6px 18px rgba(193,85,44,.4);cursor:pointer" style-hover="background:#a94823" style-active="background:#9c3f1d"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:12px 16px 16px;display:flex;justify-content:center;background:linear-gradient(transparent,#fcf4eb 40%)">
+<div style="background:#fff;border-radius:999px;padding:6px;display:flex;gap:4px;box-shadow:0 6px 20px rgba(42,30,26,.14)">
+<div style="display:flex;align-items:center;gap:7px;background:#f8e3d8;color:#c1552c;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:700"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path></svg>Inventario</div>
+<div style="display:flex;align-items:center;gap:7px;color:#a08a7d;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#fcf4eb"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1.5"></circle><circle cx="19" cy="21" r="1.5"></circle><path d="M2 3h3l3 13h11l2-9H7"></path></svg>Súper</div>
+<div style="display:flex;align-items:center;gap:7px;color:#a08a7d;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#fcf4eb"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"></path></svg>Ahorro</div>
+</div>
+</div>
+<sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+<div onClick="{{ cerrarSheet }}" style="position:absolute;inset:0;background:rgba(42,30,26,.35);z-index:5"></div>
+<div style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:28px 28px 0 0;padding:14px 20px 24px;z-index:6;box-shadow:0 -8px 30px rgba(42,30,26,.15)">
+<div style="width:40px;height:4px;border-radius:99px;background:#e9d5bd;margin:0 auto 14px"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><span style="font-size:19px;font-weight:700;color:#2a1e1a">Agregar producto</span><div onClick="{{ cerrarSheet }}" style="width:32px;height:32px;border-radius:999px;background:#fcf4eb;display:grid;place-items:center;cursor:pointer;color:#a08a7d" style-hover="background:#f3e5d6"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></div></div>
+<div style="display:flex;align-items:center;gap:10px;background:#fcf4eb;border-radius:999px;padding:12px 18px;margin-bottom:12px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#a08a7d" stroke-width="2.75" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.35-4.35"></path></svg><span style="font-size:15px;color:#a08a7d">Buscar producto (ej: arroz)…</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 6px;border-bottom:1px solid #f6ecdd"><div><div style="font-size:15px;font-weight:600;color:#2a1e1a">Arroz largo fino</div><div style="font-size:12.5px;color:#a08a7d">🍎 Alimentos</div></div><span style="color:#c1552c;font-weight:700;font-size:13px">Agregar</span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 6px;border-bottom:1px solid #f6ecdd"><div><div style="font-size:15px;font-weight:600;color:#2a1e1a">Arroz integral 1kg</div><div style="font-size:12.5px;color:#a08a7d">🍎 Alimentos</div></div><span style="background:#f3e5d6;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;color:#a08a7d">catálogo</span></div>
+<div style="padding:14px 6px 0;color:#c1552c;font-weight:700;font-size:14px">+ Crear como producto nuevo</div>
+</div>
+</sc-if>
+</div></div></div>
+
+<div class="dv-opt" id="1g" data-screen-label="Rediseño — Modo Supermercado"><div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Rediseño · Modo Supermercado</div>
+<div class="dv-card" style="width:390px;border-radius:28px;box-shadow:0 8px 30px rgba(42,30,26,.12)"><div style="height:760px;background:#fcf4eb;position:relative;overflow:hidden;display:flex;flex-direction:column">
+<div style="padding:18px 20px 10px;display:flex;align-items:center;gap:12px">
+<div style="width:36px;height:36px;border-radius:999px;background:#fff;display:grid;place-items:center;color:#c1552c;box-shadow:0 2px 8px rgba(42,30,26,.08)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></div>
+<div style="flex:1"><div style="font-size:12px;color:#a08a7d;font-weight:600">Modo supermercado</div><div style="font-size:20px;font-weight:700;color:#2a1e1a;line-height:1.1">Compra en Coto</div></div>
+</div>
+<div style="margin:4px 16px 10px;background:#2a1e1a;border-radius:22px;padding:16px 18px;color:#fff">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px"><span style="font-size:13px;font-weight:600;color:#cbb5a5">3 de 8 en el changuito</span><span style="font-size:20px;font-weight:700">$24.350 <span style="font-size:12px;font-weight:500;color:#cbb5a5">estimado</span></span></div>
+<div style="height:8px;border-radius:99px;background:rgba(255,255,255,.15);overflow:hidden"><div style="width:37%;height:100%;border-radius:99px;background:linear-gradient(90deg,#c1552c,#e0784a)"></div></div>
+</div>
+<div style="flex:1;overflow-y:auto;padding:0 16px 110px;display:flex;flex-direction:column;gap:8px">
+<div style="background:#fff;border-radius:18px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 10px rgba(42,30,26,.06)">
+<div style="width:44px;height:44px;border-radius:999px;border:2.5px solid #e9d5bd;box-sizing:border-box;flex:none;cursor:pointer" style-hover="border-color:#30A46C"></div>
+<div style="flex:1;min-width:0"><div style="font-size:15.5px;font-weight:600;color:#2a1e1a">Aceite de girasol</div><div style="font-size:12.5px;color:#a08a7d">1 litro</div></div>
+<div style="display:flex;align-items:center;gap:4px;background:#fcf4eb;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:700;color:#a08a7d">$ <span style="color:#d8c2ae">—</span></div>
+</div>
+<div style="background:#fff;border-radius:18px;padding:12px 14px;box-shadow:0 2px 10px rgba(42,30,26,.06)">
+<div style="display:flex;align-items:center;gap:12px">
+<div style="width:44px;height:44px;border-radius:999px;border:2.5px solid #e9d5bd;box-sizing:border-box;flex:none"></div>
+<div style="flex:1;min-width:0"><div style="font-size:15.5px;font-weight:600;color:#2a1e1a">Papel higiénico</div><div style="font-size:12.5px;color:#a08a7d">2 paquete</div></div>
+<div style="display:flex;align-items:center;gap:4px;background:#fcf4eb;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:700;color:#2a1e1a">$ 5.600</div>
+</div>
+<div style="margin-top:12px;padding-top:12px;border-top:1px solid #f6ecdd">
+<div style="font-size:12px;font-weight:700;color:#a08a7d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Descuento</div>
+<div style="display:flex;flex-wrap:wrap;gap:7px"><span style="background:#c1552c;color:#fff;border-radius:999px;padding:8px 14px;font-weight:700;font-size:12.5px">2x1</span><span style="background:#fcf4eb;color:#2a1e1a;border-radius:999px;padding:8px 14px;font-weight:600;font-size:12.5px">3x2</span><span style="background:#fcf4eb;color:#2a1e1a;border-radius:999px;padding:8px 14px;font-weight:600;font-size:12.5px">% dto.</span><span style="background:#fcf4eb;color:#2a1e1a;border-radius:999px;padding:8px 14px;font-weight:600;font-size:12.5px">Cupón $</span></div>
+<div style="margin-top:10px;display:flex;align-items:center;gap:8px;background:#ddefe3;border-radius:12px;padding:9px 12px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1e7a4d" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg><span style="font-size:12.5px;font-weight:700;color:#1e7a4d">Con 2x1 pagás $5.600 los 2 — ahorrás $5.600</span></div>
+</div>
+</div>
+<div style="background:#fff;border-radius:18px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 10px rgba(42,30,26,.06)">
+<div style="width:44px;height:44px;border-radius:999px;border:2.5px solid #e9d5bd;box-sizing:border-box;flex:none"></div>
+<div style="flex:1;min-width:0"><div style="font-size:15.5px;font-weight:600;color:#2a1e1a">Leche entera</div><div style="font-size:12.5px;color:#a08a7d">6 litro</div></div>
+<div style="display:flex;align-items:center;gap:4px;background:#fcf4eb;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:700;color:#2a1e1a">$ 1.450</div>
+</div>
+<div style="display:flex;align-items:center;gap:10px;margin:8px 4px 2px"><div style="flex:1;height:1px;background:#e9d5bd"></div><span style="font-size:12px;font-weight:700;color:#a08a7d;text-transform:uppercase;letter-spacing:.05em">En el changuito · 3</span><div style="flex:1;height:1px;background:#e9d5bd"></div></div>
+<div style="background:rgba(255,255,255,.6);border-radius:18px;padding:11px 14px;display:flex;align-items:center;gap:12px">
+<div style="width:44px;height:44px;border-radius:999px;background:#30A46C;display:grid;place-items:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></div>
+<div style="flex:1"><div style="font-size:15px;font-weight:600;color:#a08a7d;text-decoration:line-through">Arroz largo fino</div><div style="font-size:12.5px;color:#c4b0a2">2 unidad · $4.200</div></div>
+</div>
+<div style="background:rgba(255,255,255,.6);border-radius:18px;padding:11px 14px;display:flex;align-items:center;gap:12px">
+<div style="width:44px;height:44px;border-radius:999px;background:#30A46C;display:grid;place-items:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></div>
+<div style="flex:1"><div style="font-size:15px;font-weight:600;color:#a08a7d;text-decoration:line-through">Detergente</div><div style="font-size:12.5px;color:#c4b0a2">1 unidad · $2.890</div></div>
+</div>
+</div>
+<div style="position:absolute;right:14px;bottom:24px;width:58px;height:58px;border-radius:999px;background:#c1552c;display:grid;place-items:center;color:#fff;box-shadow:0 6px 18px rgba(193,85,44,.4)"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></div>
+</div></div></div>
+
+<div class="dv-opt" id="1h" data-screen-label="Rediseño — Historial"><div class="dv-olabel"><a class="dv-oid" href="#1h">1h</a>Rediseño · Historial / Ahorro</div>
+<div class="dv-card" style="width:390px;border-radius:28px;box-shadow:0 8px 30px rgba(42,30,26,.12)"><div style="height:760px;background:#fcf4eb;position:relative;overflow:hidden;display:flex;flex-direction:column">
+<div style="padding:18px 20px 8px"><div style="font-size:12px;color:#a08a7d;font-weight:600">Tu ahorro</div><div style="font-size:21px;font-weight:700;color:#2a1e1a;line-height:1.1">Historial</div></div>
+<div style="flex:1;overflow-y:auto;padding:8px 16px 110px;display:flex;flex-direction:column;gap:12px">
+<div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 10px rgba(42,30,26,.06)">
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px"><span style="font-size:13px;font-weight:700;color:#a08a7d;text-transform:uppercase;letter-spacing:.05em">Gasto por mes</span><span style="font-size:12px;color:#a08a7d">2026</span></div>
+<div style="font-size:26px;font-weight:700;color:#2a1e1a;margin-bottom:14px">$118.320 <span style="font-size:13px;font-weight:600;color:#1e7a4d">−40% vs. julio</span></div>
+<div style="display:flex;align-items:flex-end;gap:12px;height:110px;padding:0 4px">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div style="width:100%;height:76%;border-radius:10px 10px 4px 4px;background:#e9d5bd"></div><span style="font-size:11.5px;font-weight:700;color:#a08a7d">may</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div style="width:100%;height:88%;border-radius:10px 10px 4px 4px;background:#e9d5bd"></div><span style="font-size:11.5px;font-weight:700;color:#a08a7d">jun</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div style="width:100%;height:82%;border-radius:10px 10px 4px 4px;background:#e9d5bd"></div><span style="font-size:11.5px;font-weight:700;color:#a08a7d">jul</span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end"><div style="width:100%;height:50%;border-radius:10px 10px 4px 4px;background:linear-gradient(180deg,#e0784a,#c1552c)"></div><span style="font-size:11.5px;font-weight:700;color:#c1552c">ago</span></div>
+</div>
+</div>
+<div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 10px rgba(42,30,26,.06)">
+<div style="font-size:13px;font-weight:700;color:#a08a7d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Dónde conviene comprar</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border-radius:999px;background:#f3e5d6;display:grid;place-items:center;font-size:16px">🥛</div><div style="flex:1"><div style="font-size:15px;font-weight:600;color:#2a1e1a">Leche entera</div><div style="font-size:12.5px;color:#a08a7d">$1.450 prom.</div></div><span style="background:#ddefe3;color:#1e7a4d;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:700">Dia</span></div>
+<div style="display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border-radius:999px;background:#f3e5d6;display:grid;place-items:center;font-size:16px">🍚</div><div style="flex:1"><div style="font-size:15px;font-weight:600;color:#2a1e1a">Arroz largo fino</div><div style="font-size:12.5px;color:#a08a7d">$2.100 prom.</div></div><span style="background:#ddefe3;color:#1e7a4d;border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:700">Coto</span></div>
+</div>
+</div>
+<div style="background:#fff;border-radius:20px;padding:18px;box-shadow:0 2px 10px rgba(42,30,26,.06)">
+<div style="font-size:13px;font-weight:700;color:#a08a7d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">Tendencia de precios</div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border-radius:999px;background:#fbe4e4;display:grid;place-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#E5484D" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"></path><path d="M21 13V7h-6"></path></svg></div><div style="flex:1"><div style="font-size:15px;font-weight:600;color:#2a1e1a">Aceite de girasol</div><div style="font-size:12.5px;color:#a08a7d">$4.890</div></div><span style="color:#E5484D;font-size:13.5px;font-weight:700">+12%</span></div>
+<div style="display:flex;align-items:center;gap:12px"><div style="width:36px;height:36px;border-radius:999px;background:#ddefe3;display:grid;place-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e7a4d" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l6 6 4-4 8 8"></path><path d="M21 11v6h-6"></path></svg></div><div style="flex:1"><div style="font-size:15px;font-weight:600;color:#2a1e1a">Yerba mate</div><div style="font-size:12.5px;color:#a08a7d">$3.200</div></div><span style="color:#1e7a4d;font-size:13.5px;font-weight:700">−5%</span></div>
+</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 8px"><span style="font-size:12.5px;color:#a08a7d;font-weight:600">gonzalo@ejemplo.com</span><span style="font-size:13px;color:#c1552c;font-weight:700">Cerrar sesión</span></div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:12px 16px 16px;display:flex;justify-content:center;background:linear-gradient(transparent,#fcf4eb 40%)">
+<div style="background:#fff;border-radius:999px;padding:6px;display:flex;gap:4px;box-shadow:0 6px 20px rgba(42,30,26,.14)">
+<div style="display:flex;align-items:center;gap:7px;color:#a08a7d;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path></svg>Inventario</div>
+<div style="display:flex;align-items:center;gap:7px;color:#a08a7d;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:600"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1.5"></circle><circle cx="19" cy="21" r="1.5"></circle><path d="M2 3h3l3 13h11l2-9H7"></path></svg>Súper</div>
+<div style="display:flex;align-items:center;gap:7px;background:#f8e3d8;color:#c1552c;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:700"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"></path></svg>Ahorro</div>
+</div>
+</div>
+</div></div></div>
+
+<div class="dv-opt" id="1i" data-screen-label="Rediseño — Login"><div class="dv-olabel"><a class="dv-oid" href="#1i">1i</a>Rediseño · Login</div>
+<div class="dv-card" style="width:390px;border-radius:28px;box-shadow:0 8px 30px rgba(42,30,26,.12)"><div style="height:760px;background:#fcf4eb;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:28px;box-sizing:border-box">
+<div style="position:absolute;top:-90px;right:-90px;width:260px;height:260px;border-radius:999px;background:#f3e5d6"></div>
+<div style="position:absolute;top:40px;right:36px;width:52px;height:52px;border-radius:999px;background:#f8e3d8"></div>
+<div style="position:absolute;bottom:-70px;left:-70px;width:200px;height:200px;border-radius:999px;background:#f3e5d6"></div>
+<div style="position:relative;display:flex;flex-direction:column;gap:12px">
+<img src="assets/images/logo.png" alt="AlacenaApp" style="width:76px;height:76px;align-self:center;margin-bottom:6px">
+<div style="text-align:center;margin-bottom:18px"><div style="font-size:26px;font-weight:700;color:#2a1e1a;line-height:1.15">Tu alacena,<br>siempre al día</div><div style="font-size:14px;color:#a08a7d;font-weight:500;margin-top:8px">Inventario, listas y precios en un solo lugar</div></div>
+<input placeholder="Email" style="border:none;background:#fff;border-radius:999px;padding:15px 22px;font-size:15px;font-family:inherit;box-shadow:0 2px 8px rgba(42,30,26,.06);outline-color:#c1552c">
+<input placeholder="Contraseña" type="password" style="border:none;background:#fff;border-radius:999px;padding:15px 22px;font-size:15px;font-family:inherit;box-shadow:0 2px 8px rgba(42,30,26,.06);outline-color:#c1552c">
+<div style="background:#c1552c;border-radius:999px;padding:15px;text-align:center;color:#fff;font-weight:700;font-size:15.5px;margin-top:6px;cursor:pointer;box-shadow:0 6px 18px rgba(193,85,44,.35)" style-hover="background:#a94823">Iniciar sesión</div>
+<div style="text-align:center;font-size:13.5px;color:#a08a7d;font-weight:600;margin-top:6px">¿No tenés cuenta? <span style="color:#c1552c;font-weight:700">Creá una</span></div>
+<div style="display:flex;align-items:center;gap:10px;margin-top:10px"><div style="flex:1;height:1px;background:#e9d5bd"></div><span style="color:#a08a7d;font-size:12.5px;font-weight:600">o</span><div style="flex:1;height:1px;background:#e9d5bd"></div></div>
+<div style="background:#fff;border-radius:999px;padding:14px;text-align:center;font-weight:700;font-size:14.5px;color:#2a1e1a;box-shadow:0 2px 8px rgba(42,30,26,.06);cursor:pointer" style-hover="background:#fcf7f0">Continuar con Google</div>
+</div>
+</div></div></div>
+
+<div class="dv-opt" id="1j" data-screen-label="Rediseño — Escanear ticket"><div class="dv-olabel"><a class="dv-oid" href="#1j">1j</a>Rediseño · Escanear ticket (confirmación OCR)</div>
+<div class="dv-card" style="width:390px;border-radius:28px;box-shadow:0 8px 30px rgba(42,30,26,.12)"><div style="height:760px;background:rgba(42,30,26,.35);position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end">
+<div style="background:#fff;border-radius:28px 28px 0 0;padding:14px 20px 22px;max-height:92%;display:flex;flex-direction:column">
+<div style="width:40px;height:4px;border-radius:99px;background:#e9d5bd;margin:0 auto 14px"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><span style="font-size:19px;font-weight:700;color:#2a1e1a">Ticket detectado</span><div style="width:32px;height:32px;border-radius:999px;background:#fcf4eb;display:grid;place-items:center;color:#a08a7d"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></div></div>
+<div style="display:flex;gap:8px;margin-bottom:14px">
+<div style="flex:1;background:#fcf4eb;border-radius:16px;padding:10px 14px"><div style="font-size:11px;font-weight:700;color:#a08a7d;text-transform:uppercase;letter-spacing:.05em">Supermercado</div><div style="font-size:14.5px;font-weight:700;color:#2a1e1a;margin-top:2px">Coto</div></div>
+<div style="flex:1;background:#fcf4eb;border-radius:16px;padding:10px 14px"><div style="font-size:11px;font-weight:700;color:#a08a7d;text-transform:uppercase;letter-spacing:.05em">Fecha</div><div style="font-size:14.5px;font-weight:700;color:#2a1e1a;margin-top:2px">24/08/2026</div></div>
+</div>
+<div style="font-size:12px;font-weight:700;color:#a08a7d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">4 ítems detectados</div>
+<div style="display:flex;flex-direction:column;gap:6px;overflow-y:auto">
+<div style="display:flex;align-items:center;gap:11px;background:#fcf4eb;border-radius:16px;padding:10px 12px"><div style="width:26px;height:26px;border-radius:999px;background:#30A46C;display:grid;place-items:center;flex:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></div><div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:#2a1e1a">Leche La Serenísima 1L</div><div style="font-size:12px;color:#a08a7d">Coincide con "Leche entera"</div></div><span style="font-size:14px;font-weight:700;color:#2a1e1a">$1.450</span></div>
+<div style="display:flex;align-items:center;gap:11px;background:#fcf4eb;border-radius:16px;padding:10px 12px"><div style="width:26px;height:26px;border-radius:999px;background:#30A46C;display:grid;place-items:center;flex:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></div><div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:#2a1e1a">Arroz Gallo Oro 1kg</div><div style="font-size:12px;color:#a08a7d">Coincide con "Arroz largo fino"</div></div><span style="font-size:14px;font-weight:700;color:#2a1e1a">$2.100</span></div>
+<div style="display:flex;align-items:center;gap:11px;background:#fdf0d5;border-radius:16px;padding:10px 12px"><div style="width:26px;height:26px;border-radius:999px;border:2.5px solid #F5A623;box-sizing:border-box;flex:none"></div><div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:#2a1e1a">Galletitas Oreo x3</div><div style="font-size:12px;color:#9a6b0a;font-weight:600">Producto nuevo → 🍎 Alimentos</div></div><span style="font-size:14px;font-weight:700;color:#2a1e1a">$3.850</span></div>
+<div style="display:flex;align-items:center;gap:11px;background:#fcf4eb;border-radius:16px;padding:10px 12px"><div style="width:26px;height:26px;border-radius:999px;background:#30A46C;display:grid;place-items:center;flex:none"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></div><div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:#2a1e1a">Detergente Magistral</div><div style="font-size:12px;color:#a08a7d">Coincide con "Detergente"</div></div><span style="font-size:14px;font-weight:700;color:#2a1e1a">$2.890</span></div>
+</div>
+<div style="background:#c1552c;border-radius:999px;padding:15px;text-align:center;color:#fff;font-weight:700;font-size:15px;margin-top:14px;box-shadow:0 6px 18px rgba(193,85,44,.35)">Sumar 4 ítems al inventario</div>
+</div>
+</div></div></div>
+</div>
+
+<div style="font:600 12px system-ui,sans-serif;color:rgba(0,0,0,.45);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Rediseño — web escritorio</div>
+<div class="dv-opts">
+<div class="dv-opt" id="1k" data-screen-label="Rediseño — Escritorio"><div class="dv-olabel"><a class="dv-oid" href="#1k">1k</a>Rediseño · Inventario en escritorio (≥1024px)</div>
+<div class="dv-card" style="width:1120px;border-radius:16px;box-shadow:0 8px 30px rgba(42,30,26,.1)"><div style="background:#fcf4eb;min-height:680px;display:flex;flex-direction:column">
+<div style="padding:16px 28px;display:flex;justify-content:center">
+<div style="background:#fff;border-radius:999px;padding:8px 10px 8px 20px;display:flex;align-items:center;gap:8px;width:100%;max-width:860px;box-shadow:0 4px 16px rgba(42,30,26,.08)">
+<div style="display:flex;align-items:center;gap:8px;margin-right:auto"><img src="assets/images/logo.png" alt="" style="width:24px;height:24px"><span style="font-size:15px;font-weight:700;color:#2a1e1a">Alacena<span style="color:#c1552c">App</span></span></div>
+<div style="display:flex;align-items:center;gap:7px;background:#f8e3d8;color:#c1552c;border-radius:999px;padding:8px 16px;font-size:13px;font-weight:700"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"></path></svg>Inventario</div>
+<div style="display:flex;align-items:center;gap:7px;color:#a08a7d;border-radius:999px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#fcf4eb"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1.5"></circle><circle cx="19" cy="21" r="1.5"></circle><path d="M2 3h3l3 13h11l2-9H7"></path></svg>Supermercado</div>
+<div style="display:flex;align-items:center;gap:7px;color:#a08a7d;border-radius:999px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:#fcf4eb"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"></path></svg>Historial</div>
+<div style="width:34px;height:34px;border-radius:999px;background:#f3e5d6;display:grid;place-items:center;color:#c1552c;font-weight:700;font-size:12.5px">GM</div>
+</div>
+</div>
+<div style="flex:1;display:grid;grid-template-columns:1fr 320px;gap:24px;max-width:1040px;width:100%;margin:0 auto;padding:8px 28px 32px;box-sizing:border-box">
+<div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+<div><div style="font-size:24px;font-weight:700;color:#2a1e1a">Tu inventario</div><div style="font-size:13.5px;color:#a08a7d;font-weight:500;margin-top:2px">8 productos en 3 categorías</div></div>
+<div style="display:flex;gap:10px">
+<div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700;color:#c1552c;box-shadow:0 2px 8px rgba(42,30,26,.06);cursor:pointer" style-hover="background:#fcf7f0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>Escanear ticket</div>
+<div style="display:flex;align-items:center;gap:8px;background:#c1552c;border-radius:999px;padding:10px 18px;font-size:13.5px;font-weight:700;color:#fff;box-shadow:0 4px 14px rgba(193,85,44,.3);cursor:pointer" style-hover="background:#a94823"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Agregar producto</div>
+</div>
+</div>
+<div style="background:#fff;border-radius:20px;padding:6px 16px 14px;box-shadow:0 2px 10px rgba(42,30,26,.06);margin-bottom:14px">
+<div style="display:flex;align-items:center;gap:12px;padding:12px 4px"><div style="width:36px;height:36px;border-radius:999px;background:#f3e5d6;display:grid;place-items:center;font-size:17px">🍎</div><span style="flex:1;font-size:16px;font-weight:700;color:#2a1e1a">Alimentos</span><span style="background:#fcf4eb;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;color:#a08a7d">4</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div style="display:flex;align-items:center;gap:11px;background:#fcf4eb;border-radius:16px;padding:11px 13px"><div style="width:10px;height:10px;border-radius:99px;background:#30A46C;box-shadow:0 0 0 4px rgba(48,164,108,.18)"></div><div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:#2a1e1a">Arroz largo fino</div><div style="font-size:12px;color:#a08a7d">2 unidad</div></div><div style="display:flex;align-items:center;background:#f3e5d6;border-radius:999px;padding:2px"><div style="width:26px;height:26px;border-radius:999px;display:grid;place-items:center;color:#2a1e1a;cursor:pointer" style-hover="background:#e9d5bd">−</div><span style="min-width:20px;text-align:center;font-size:13px;font-weight:700">2</span><div style="width:26px;height:26px;border-radius:999px;display:grid;place-items:center;color:#2a1e1a;cursor:pointer" style-hover="background:#e9d5bd">+</div></div></div>
+<div style="display:flex;align-items:center;gap:11px;background:#fcf4eb;border-radius:16px;padding:11px 13px"><div style="width:10px;height:10px;border-radius:99px;background:#F5A623;box-shadow:0 0 0 4px rgba(245,166,35,.18)"></div><div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:#2a1e1a">Fideos spaghetti</div><div style="font-size:12px;color:#a08a7d">1 unidad</div></div><div style="display:flex;align-items:center;background:#f3e5d6;border-radius:999px;padding:2px"><div style="width:26px;height:26px;border-radius:999px;display:grid;place-items:center;color:#2a1e1a;cursor:pointer" style-hover="background:#e9d5bd">−</div><span style="min-width:20px;text-align:center;font-size:13px;font-weight:700">1</span><div style="width:26px;height:26px;border-radius:999px;display:grid;place-items:center;color:#2a1e1a;cursor:pointer" style-hover="background:#e9d5bd">+</div></div></div>
+<div style="display:flex;align-items:center;gap:11px;background:#fcf4eb;border-radius:16px;padding:11px 13px"><div style="width:10px;height:10px;border-radius:99px;background:#E5484D;box-shadow:0 0 0 4px rgba(229,72,77,.18)"></div><div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:#2a1e1a">Aceite de girasol</div><div style="font-size:12px;color:#a08a7d">0 litro · vence 10/09</div></div><div style="display:flex;align-items:center;background:#f3e5d6;border-radius:999px;padding:2px"><div style="width:26px;height:26px;border-radius:999px;display:grid;place-items:center;color:#2a1e1a;cursor:pointer" style-hover="background:#e9d5bd">−</div><span style="min-width:20px;text-align:center;font-size:13px;font-weight:700">0</span><div style="width:26px;height:26px;border-radius:999px;display:grid;place-items:center;color:#2a1e1a;cursor:pointer" style-hover="background:#e9d5bd">+</div></div></div>
+<div style="display:flex;align-items:center;gap:11px;background:#fcf4eb;border-radius:16px;padding:11px 13px"><div style="width:10px;height:10px;border-radius:99px;background:#30A46C;box-shadow:0 0 0 4px rgba(48,164,108,.18)"></div><div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:#2a1e1a">Yerba mate</div><div style="font-size:12px;color:#a08a7d">3 unidad</div></div><div style="display:flex;align-items:center;background:#f3e5d6;border-radius:999px;padding:2px"><div style="width:26px;height:26px;border-radius:999px;display:grid;place-items:center;color:#2a1e1a;cursor:pointer" style-hover="background:#e9d5bd">−</div><span style="min-width:20px;text-align:center;font-size:13px;font-weight:700">3</span><div style="width:26px;height:26px;border-radius:999px;display:grid;place-items:center;color:#2a1e1a;cursor:pointer" style-hover="background:#e9d5bd">+</div></div></div>
+</div>
+</div>
+<div style="background:#fff;border-radius:20px;padding:6px 16px 14px;box-shadow:0 2px 10px rgba(42,30,26,.06)">
+<div style="display:flex;align-items:center;gap:12px;padding:12px 4px"><div style="width:36px;height:36px;border-radius:999px;background:#f3e5d6;display:grid;place-items:center;font-size:17px">🧻</div><span style="flex:1;font-size:16px;font-weight:700;color:#2a1e1a">Higiene</span><span style="background:#fcf4eb;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:700;color:#a08a7d">2</span></div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+<div style="display:flex;align-items:center;gap:11px;background:#fcf4eb;border-radius:16px;padding:11px 13px"><div style="width:10px;height:10px;border-radius:99px;background:#E5484D;box-shadow:0 0 0 4px rgba(229,72,77,.18)"></div><div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:#2a1e1a">Papel higiénico</div><div style="font-size:12px;color:#a08a7d">0 paquete</div></div><div style="display:flex;align-items:center;background:#f3e5d6;border-radius:999px;padding:2px"><div style="width:26px;height:26px;border-radius:999px;display:grid;place-items:center;color:#2a1e1a;cursor:pointer" style-hover="background:#e9d5bd">−</div><span style="min-width:20px;text-align:center;font-size:13px;font-weight:700">0</span><div style="width:26px;height:26px;border-radius:999px;display:grid;place-items:center;color:#2a1e1a;cursor:pointer" style-hover="background:#e9d5bd">+</div></div></div>
+<div style="display:flex;align-items:center;gap:11px;background:#fcf4eb;border-radius:16px;padding:11px 13px"><div style="width:10px;height:10px;border-radius:99px;background:#30A46C;box-shadow:0 0 0 4px rgba(48,164,108,.18)"></div><div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:600;color:#2a1e1a">Shampoo</div><div style="font-size:12px;color:#a08a7d">2 unidad</div></div><div style="display:flex;align-items:center;background:#f3e5d6;border-radius:999px;padding:2px"><div style="width:26px;height:26px;border-radius:999px;display:grid;place-items:center;color:#2a1e1a;cursor:pointer" style-hover="background:#e9d5bd">−</div><span style="min-width:20px;text-align:center;font-size:13px;font-weight:700">2</span><div style="width:26px;height:26px;border-radius:999px;display:grid;place-items:center;color:#2a1e1a;cursor:pointer" style-hover="background:#e9d5bd">+</div></div></div>
+</div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="background:#2a1e1a;border-radius:20px;padding:20px;color:#fff">
+<div style="font-size:13px;font-weight:700;color:#cbb5a5;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Para reponer</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+<div style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600"><span style="width:9px;height:9px;border-radius:99px;background:#E5484D"></span>Aceite de girasol</div>
+<div style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600"><span style="width:9px;height:9px;border-radius:99px;background:#E5484D"></span>Papel higiénico</div>
+<div style="display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600"><span style="width:9px;height:9px;border-radius:99px;background:#F5A623"></span>Fideos spaghetti</div>
+</div>
+<div style="background:#c1552c;border-radius:999px;padding:12px;text-align:center;font-weight:700;font-size:13.5px;cursor:pointer" style-hover="background:#a94823">Generar lista de compras</div>
+</div>
+<div style="background:#fff;border-radius:20px;padding:20px;box-shadow:0 2px 10px rgba(42,30,26,.06)">
+<div style="font-size:13px;font-weight:700;color:#a08a7d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Gasto de agosto</div>
+<div style="font-size:24px;font-weight:700;color:#2a1e1a">$118.320</div>
+<div style="font-size:12.5px;font-weight:700;color:#1e7a4d;margin-top:2px">−40% vs. julio</div>
+<div style="display:flex;align-items:flex-end;gap:8px;height:64px;margin-top:12px">
+<div style="flex:1;height:76%;border-radius:8px 8px 3px 3px;background:#e9d5bd"></div>
+<div style="flex:1;height:88%;border-radius:8px 8px 3px 3px;background:#e9d5bd"></div>
+<div style="flex:1;height:82%;border-radius:8px 8px 3px 3px;background:#e9d5bd"></div>
+<div style="flex:1;height:50%;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,#e0784a,#c1552c)"></div>
+</div>
+</div>
+<div style="background:#fff;border-radius:20px;padding:20px;box-shadow:0 2px 10px rgba(42,30,26,.06)">
+<div style="font-size:13px;font-weight:700;color:#a08a7d;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Alertas de precio</div>
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="font-weight:600;color:#2a1e1a">Aceite de girasol</span><span style="color:#E5484D;font-weight:700">+12%</span></div>
+<div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="font-weight:600;color:#2a1e1a">Yerba mate</span><span style="color:#1e7a4d;font-weight:700">−5%</span></div>
+</div>
+</div>
+</div>
+</div>
+</div></div></div>
+</div>
+<p class="dv-next">Probá: "hacé el Modo Supermercado interactivo también" · "más contraste en <a class="dv-oid" href="#1h">1h</a>" · "mostrame una variante con modo oscuro"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    sheetOpen: false,
+    colapsadas: {},
+    items: [
+      { id: 'a1', cat: 'ali', nombre: 'Arroz largo fino', cant: 2, min: 1, unidad: 'unidad', extra: '' },
+      { id: 'a2', cat: 'ali', nombre: 'Fideos spaghetti', cant: 1, min: 2, unidad: 'unidad', extra: '' },
+      { id: 'a3', cat: 'ali', nombre: 'Aceite de girasol', cant: 0, min: 1, unidad: 'litro', extra: ' · vence 10/09' },
+      { id: 'a4', cat: 'ali', nombre: 'Yerba mate', cant: 3, min: 1, unidad: 'unidad', extra: '' },
+      { id: 'l1', cat: 'lim', nombre: 'Detergente', cant: 1, min: 1, unidad: 'unidad', extra: '' },
+      { id: 'l2', cat: 'lim', nombre: 'Lavandina', cant: 2, min: 1, unidad: 'litro', extra: '' },
+      { id: 'h1', cat: 'hig', nombre: 'Papel higiénico', cant: 0, min: 2, unidad: 'paquete', extra: '' },
+      { id: 'h2', cat: 'hig', nombre: 'Shampoo', cant: 2, min: 1, unidad: 'unidad', extra: '' },
+    ],
+  };
+  estado(it) {
+    if (it.cant <= 0) return 'rojo';
+    if (it.cant <= it.min) return 'amarillo';
+    return 'verde';
+  }
+  renderVals() {
+    const COLOR = { rojo: '#E5484D', amarillo: '#F5A623', verde: '#30A46C' };
+    const HALO = { rojo: 'rgba(229,72,77,.18)', amarillo: 'rgba(245,166,35,.18)', verde: 'rgba(48,164,108,.18)' };
+    const CATS = [
+      { key: 'ali', icono: '🍎', nombre: 'Alimentos' },
+      { key: 'lim', icono: '🧴', nombre: 'Limpieza' },
+      { key: 'hig', icono: '🧻', nombre: 'Higiene' },
+    ];
+    const adj = (id, d) => this.setState((s) => ({
+      items: s.items.map((it) => it.id === id ? { ...it, cant: Math.max(0, it.cant + d) } : it),
+    }));
+    let nRojo = 0, nAmarillo = 0, nVerde = 0;
+    for (const it of this.state.items) {
+      const e = this.estado(it);
+      if (e === 'rojo') nRojo++; else if (e === 'amarillo') nAmarillo++; else nVerde++;
+    }
+    const cats = CATS.map((c) => {
+      const abierta = !this.state.colapsadas[c.key];
+      const items = this.state.items.filter((it) => it.cat === c.key).map((it) => {
+        const e = this.estado(it);
+        return {
+          nombre: it.nombre, cant: it.cant,
+          detalle: it.cant + ' ' + it.unidad + it.extra,
+          color: COLOR[e], halo: HALO[e],
+          menos: () => adj(it.id, -1), mas: () => adj(it.id, 1),
+        };
+      });
+      return {
+        icono: c.icono, nombre: c.nombre, count: items.length,
+        abierta, rot: abierta ? 0 : -90,
+        toggle: () => this.setState((s) => ({ colapsadas: { ...s.colapsadas, [c.key]: !s.colapsadas[c.key] } })),
+        items,
+      };
+    });
+    return {
+      cats, nRojo, nAmarillo, nVerde,
+      sheetOpen: this.state.sheetOpen,
+      abrirSheet: () => this.setState({ sheetOpen: true }),
+      cerrarSheet: () => this.setState({ sheetOpen: false }),
+    };
+  }
+}
+</script>
+</body>
+</html>

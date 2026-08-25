@@ -1,8 +1,10 @@
+import { Camera } from 'lucide-react-native';
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '../../constants/colors';
+import { Fonts } from '../../constants/typography';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../lib/supabase';
 import DashboardAhorroScreen from '../../screens/DashboardAhorroScreen';
@@ -27,7 +29,7 @@ export default function HistorialTab() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: Colors.background }} edges={['top']}>
       <View style={{ flex: 1 }}>
         <DashboardAhorroScreen key={refrescarKey} />
 
@@ -36,7 +38,7 @@ export default function HistorialTab() {
           onPress={() => setModalVisible(true)}
           accessibilityLabel="Escanear ticket"
         >
-          <Text style={styles.fabTexto}>📷</Text>
+          <Camera size={20} color={Colors.primary} strokeWidth={2.75} />
         </PressableFeedback>
 
         <EscanearTicketModal
@@ -49,13 +51,9 @@ export default function HistorialTab() {
       {session && (
         <View style={styles.cuenta}>
           <Text style={styles.email}>{session.user.email}</Text>
-          <PressableFeedback
-            style={[styles.boton, cerrandoSesion && styles.botonDisabled]}
-            onPress={cerrarSesion}
-            disabled={cerrandoSesion}
-          >
+          <PressableFeedback onPress={cerrarSesion} disabled={cerrandoSesion}>
             {cerrandoSesion ? (
-              <ActivityIndicator color={Colors.error} />
+              <ActivityIndicator color={Colors.primary} size="small" />
             ) : (
               <Text style={styles.botonTexto}>Cerrar sesión</Text>
             )}
@@ -68,37 +66,28 @@ export default function HistorialTab() {
 
 const styles = StyleSheet.create({
   cuenta: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: Colors.backgroundMuted,
-  },
-  email: { color: Colors.textSecondary, fontSize: 13 },
-  boton: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
-    paddingVertical: 10,
+    justifyContent: 'space-between',
+    paddingVertical: 14,
     paddingHorizontal: 20,
   },
-  botonTexto: { color: Colors.error, fontWeight: '600' },
-  botonDisabled: { opacity: 0.5 },
+  email: { color: Colors.textSecondary, fontSize: 12.5, fontFamily: Fonts.medium },
+  botonTexto: { color: Colors.primary, fontFamily: Fonts.bold, fontSize: 13 },
   fab: {
     position: 'absolute',
-    right: 20,
+    right: 24,
     bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary,
+    width: 46,
+    height: 46,
+    borderRadius: 999,
+    backgroundColor: Colors.white,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
+    shadowColor: '#2a1e1a',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    elevation: 2,
   },
-  fabTexto: { fontSize: 24 },
 });

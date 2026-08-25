@@ -1,3 +1,4 @@
+import { Search, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,6 +12,7 @@ import {
 import CategoriaPicker from './CategoriaPicker';
 import PressableFeedback from './PressableFeedback';
 import { Colors } from '../constants/colors';
+import { Fonts } from '../constants/typography';
 import { useAuth } from '../hooks/useAuth';
 import { useBuscarProductoSimilar } from '../hooks/useBuscarProductoSimilar';
 import type { ResultadoBusquedaProducto } from '../hooks/useBuscarProductoSimilar';
@@ -161,23 +163,28 @@ export default function AgregarProductoModal({
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.overlay}>
         <View style={styles.sheet}>
+          <View style={styles.handle} />
           <View style={styles.header}>
             <Text style={styles.titulo}>Agregar producto</Text>
-            <PressableFeedback onPress={onClose}>
-              <Text style={styles.cerrar}>Cerrar</Text>
+            <PressableFeedback style={styles.botonCerrar} onPress={onClose} accessibilityLabel="Cerrar">
+              <X size={15} color={Colors.textSecondary} strokeWidth={2.75} />
             </PressableFeedback>
           </View>
 
           <ScrollView keyboardShouldPersistTaps="handled">
             {!pasoCantidad && (
               <>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Buscar producto (ej: arroz)"
-                  value={query}
-                  onChangeText={setQuery}
-                  autoFocus
-                />
+                <View style={styles.buscador}>
+                  <Search size={17} color={Colors.textSecondary} strokeWidth={2.75} />
+                  <TextInput
+                    style={styles.buscadorInput}
+                    placeholder="Buscar producto (ej: arroz)"
+                    placeholderTextColor={Colors.textSecondary}
+                    value={query}
+                    onChangeText={setQuery}
+                    autoFocus
+                  />
+                </View>
 
                 {buscando && <ActivityIndicator style={styles.spinner} />}
 
@@ -189,13 +196,17 @@ export default function AgregarProductoModal({
                   >
                     <View style={styles.resultadoInfo}>
                       <Text style={styles.resultadoNombre}>{r.nombre}</Text>
-                      <Text style={styles.resultadoCategoria}>{r.categoria_nombre ?? '—'}</Text>
+                      <Text style={styles.resultadoCategoria}>
+                        {r.categoria_icono ? `${r.categoria_icono} ` : ''}
+                        {r.categoria_nombre ?? '—'}
+                      </Text>
                     </View>
                     {r.origen === 'sepa' && (
                       <View style={styles.badgeSepa}>
                         <Text style={styles.badgeSepaTexto}>catálogo</Text>
                       </View>
                     )}
+                    <Text style={styles.resultadoAccion}>Agregar</Text>
                   </PressableFeedback>
                 ))}
 
@@ -282,7 +293,7 @@ export default function AgregarProductoModal({
                 disabled={guardando}
               >
                 {guardando ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color={Colors.white} />
                 ) : (
                   <Text style={styles.botonTexto}>Agregar al inventario</Text>
                 )}
@@ -296,13 +307,21 @@ export default function AgregarProductoModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  overlay: { flex: 1, backgroundColor: 'rgba(42,30,26,0.35)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.white,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     padding: 20,
     maxHeight: '85%',
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: Colors.border,
+    alignSelf: 'center',
+    marginBottom: 14,
   },
   header: {
     flexDirection: 'row',
@@ -310,14 +329,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  titulo: { fontSize: 18, fontWeight: '700' },
-  cerrar: { color: Colors.primary, fontWeight: '600' },
+  titulo: { fontSize: 19, fontFamily: Fonts.bold, color: Colors.textPrimary },
+  botonCerrar: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buscador: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.background,
+    borderRadius: 999,
+    paddingHorizontal: 18,
+    marginBottom: 12,
+  },
+  buscadorInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 15,
+    fontFamily: Fonts.medium,
+    color: Colors.textPrimary,
+  },
   input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
+    backgroundColor: Colors.background,
+    borderRadius: 999,
     padding: 12,
-    fontSize: 16,
+    paddingHorizontal: 18,
+    fontSize: 15,
+    fontFamily: Fonts.medium,
+    color: Colors.textPrimary,
     marginBottom: 12,
   },
   spinner: { marginVertical: 8 },
@@ -325,35 +369,42 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 4,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.backgroundMuted,
+    borderBottomColor: '#f6ecdd',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
   resultadoInfo: { flex: 1 },
-  resultadoNombre: { fontSize: 15, fontWeight: '600' },
-  resultadoCategoria: { fontSize: 13, color: Colors.textSecondary },
+  resultadoNombre: { fontSize: 15, fontFamily: Fonts.semibold, color: Colors.textPrimary },
+  resultadoCategoria: { fontSize: 12.5, color: Colors.textSecondary, fontFamily: Fonts.medium, marginTop: 1 },
+  resultadoAccion: { fontSize: 13, fontFamily: Fonts.bold, color: Colors.primary },
   badgeSepa: {
     backgroundColor: Colors.backgroundMuted,
-    borderRadius: 6,
+    borderRadius: 999,
     paddingVertical: 3,
     paddingHorizontal: 8,
   },
-  badgeSepaTexto: { fontSize: 11, color: Colors.textSecondary, fontWeight: '600' },
+  badgeSepaTexto: { fontSize: 11, color: Colors.textSecondary, fontFamily: Fonts.bold },
   crearNuevo: { paddingVertical: 14 },
-  crearNuevoTexto: { color: Colors.primary, fontWeight: '600' },
+  crearNuevoTexto: { color: Colors.primary, fontFamily: Fonts.bold, fontSize: 14 },
   seccion: { marginTop: 4 },
-  label: { fontSize: 13, color: Colors.textSecondary, marginBottom: 6, marginTop: 4 },
-  productoElegido: { fontSize: 16, fontWeight: '700', marginBottom: 12 },
-  error: { color: Colors.error, textAlign: 'center', marginTop: 8 },
+  label: { fontSize: 13, color: Colors.textSecondary, marginBottom: 6, marginTop: 4, fontFamily: Fonts.semibold },
+  productoElegido: { fontSize: 16, fontFamily: Fonts.bold, color: Colors.textPrimary, marginBottom: 12 },
+  error: { color: Colors.error, textAlign: 'center', marginTop: 8, fontFamily: Fonts.medium },
   boton: {
     backgroundColor: Colors.primary,
-    borderRadius: 8,
-    padding: 14,
+    borderRadius: 999,
+    padding: 15,
     alignItems: 'center',
     marginTop: 16,
     marginBottom: 8,
+    shadowColor: '#c1552c',
+    shadowOpacity: 0.4,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
   botonDisabled: { opacity: 0.5 },
-  botonTexto: { color: Colors.white, fontWeight: '700', fontSize: 16 },
+  botonTexto: { color: Colors.white, fontFamily: Fonts.bold, fontSize: 15.5 },
 });

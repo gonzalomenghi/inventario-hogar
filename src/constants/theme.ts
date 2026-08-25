@@ -8,12 +8,16 @@ import '@/global.css';
 import { Platform } from 'react-native';
 
 export const Colors = {
+  // light: alineado a la paleta terracota de constants/colors.ts —
+  // best-effort para el tab bar nativo (NativeTabs solo expone
+  // background/indicator/label color, no se puede recrear ahí el pill
+  // flotante del rediseño web; ver design_handoff_alacena_calida/README.md).
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#2a1e1a',
+    background: '#fcf4eb',
+    backgroundElement: '#f3e5d6',
+    backgroundSelected: '#f8e3d8',
+    textSecondary: '#a08a7d',
   },
   dark: {
     text: '#ffffff',

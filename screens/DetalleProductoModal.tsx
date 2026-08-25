@@ -1,3 +1,4 @@
+import { X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,6 +12,7 @@ import {
 import CategoriaPicker from './CategoriaPicker';
 import PressableFeedback from './PressableFeedback';
 import { Colors } from '../constants/colors';
+import { Fonts } from '../constants/typography';
 import { supabase } from '../lib/supabase';
 import type { InventarioItem } from '../types/database.types';
 
@@ -131,10 +133,11 @@ export default function DetalleProductoModal({
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.overlay}>
         <View style={styles.sheet}>
+          <View style={styles.handle} />
           <View style={styles.header}>
             <Text style={styles.titulo}>Detalle del producto</Text>
-            <PressableFeedback onPress={onClose}>
-              <Text style={styles.cerrar}>Cerrar</Text>
+            <PressableFeedback style={styles.botonCerrar} onPress={onClose} accessibilityLabel="Cerrar">
+              <X size={15} color={Colors.textSecondary} strokeWidth={2.75} />
             </PressableFeedback>
           </View>
 
@@ -247,13 +250,21 @@ export default function DetalleProductoModal({
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+  overlay: { flex: 1, backgroundColor: 'rgba(42,30,26,0.35)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: Colors.white,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     padding: 20,
     maxHeight: '85%',
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: Colors.border,
+    alignSelf: 'center',
+    marginBottom: 14,
   },
   header: {
     flexDirection: 'row',
@@ -261,10 +272,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  titulo: { fontSize: 18, fontWeight: '700' },
-  cerrar: { color: Colors.primary, fontWeight: '600' },
-  nombre: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
-  dato: { fontSize: 14, color: Colors.textSecondary, marginBottom: 4 },
+  titulo: { fontSize: 19, fontFamily: Fonts.bold, color: Colors.textPrimary },
+  botonCerrar: {
+    width: 32,
+    height: 32,
+    borderRadius: 999,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nombre: { fontSize: 18, fontFamily: Fonts.bold, color: Colors.textPrimary, marginBottom: 8 },
+  dato: { fontSize: 14, color: Colors.textSecondary, fontFamily: Fonts.medium, marginBottom: 4 },
   seccion: {
     marginTop: 16,
     paddingTop: 16,
@@ -272,51 +290,52 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.backgroundMuted,
     gap: 4,
   },
-  label: { fontSize: 13, color: Colors.textSecondary, marginBottom: 6, marginTop: 4 },
+  label: { fontSize: 13, color: Colors.textSecondary, marginBottom: 6, marginTop: 4, fontFamily: Fonts.semibold },
   input: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
+    backgroundColor: Colors.background,
+    borderRadius: 999,
     padding: 12,
-    fontSize: 16,
+    paddingHorizontal: 18,
+    fontSize: 15,
+    fontFamily: Fonts.medium,
+    color: Colors.textPrimary,
     marginBottom: 8,
   },
-  error: { color: Colors.error, fontSize: 13, marginTop: 4 },
-  ok: { color: Colors.success, fontSize: 13, marginTop: 4 },
+  error: { color: Colors.error, fontSize: 13, marginTop: 4, fontFamily: Fonts.medium },
+  ok: { color: Colors.success, fontSize: 13, marginTop: 4, fontFamily: Fonts.medium },
   boton: {
     backgroundColor: Colors.primary,
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 999,
+    padding: 13,
     alignItems: 'center',
     marginTop: 8,
   },
   botonDisabled: { opacity: 0.5 },
-  botonTexto: { color: Colors.white, fontWeight: '700', fontSize: 15 },
+  botonTexto: { color: Colors.white, fontFamily: Fonts.bold, fontSize: 15 },
   botonEliminar: { alignItems: 'center', padding: 8 },
-  botonEliminarTexto: { color: Colors.error, fontWeight: '600', fontSize: 14 },
+  botonEliminarTexto: { color: Colors.error, fontFamily: Fonts.semibold, fontSize: 14 },
   confirmEliminar: {
     backgroundColor: Colors.backgroundMuted,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 16,
+    padding: 14,
     gap: 10,
   },
-  confirmEliminarTexto: { fontSize: 14, color: Colors.textPrimary, textAlign: 'center' },
+  confirmEliminarTexto: { fontSize: 14, color: Colors.textPrimary, fontFamily: Fonts.medium, textAlign: 'center' },
   confirmEliminarBotones: { flexDirection: 'row', gap: 8 },
   confirmCancelar: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 8,
+    backgroundColor: Colors.white,
+    borderRadius: 999,
     padding: 10,
     alignItems: 'center',
   },
-  confirmCancelarTexto: { color: Colors.textSecondary, fontWeight: '600' },
+  confirmCancelarTexto: { color: Colors.textSecondary, fontFamily: Fonts.semibold },
   confirmEliminarBoton: {
     flex: 1,
     backgroundColor: Colors.error,
-    borderRadius: 8,
+    borderRadius: 999,
     padding: 10,
     alignItems: 'center',
   },
-  confirmEliminarBotonTexto: { color: Colors.white, fontWeight: '700' },
+  confirmEliminarBotonTexto: { color: Colors.white, fontFamily: Fonts.bold },
 });

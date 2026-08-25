@@ -1,10 +1,12 @@
+import { useRouter } from 'expo-router';
+import { Camera, ChevronDown, Minus, Plus, TrendingDown, TrendingUp } from 'lucide-react-native';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  SectionList,
   View,
   Text,
   StyleSheet,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import Animated, {
   FadeIn,
@@ -17,44 +19,70 @@ import Animated, {
 import AgregarProductoModal from './AgregarProductoModal';
 import DetalleProductoModal from './DetalleProductoModal';
 import EscanearTicketModal from './EscanearTicketModal';
+import GraficoGastoMensual from './GraficoGastoMensual';
 import PressableFeedback from './PressableFeedback';
 import { Colors } from '../constants/colors';
+import { Fonts } from '../constants/typography';
+import { useAuth } from '../hooks/useAuth';
 import { useCategorias } from '../hooks/useCategorias';
+import { useDashboardAhorro } from '../hooks/useDashboardAhorro';
 import { useInventario } from '../hooks/useInventario';
+import { supabase } from '../lib/supabase';
 import type { EstadoStock, InventarioItem } from '../types/database.types';
+
+const DESKTOP_BREAKPOINT = 1024;
 
 const COLOR_SEMAFORO: Record<EstadoStock, string> = {
   rojo: Colors.error,
   amarillo: Colors.warning,
   verde: Colors.success,
 };
+const TINT_SEMAFORO: Record<EstadoStock, string> = {
+  rojo: Colors.errorTint,
+  amarillo: Colors.warningTint,
+  verde: Colors.successTint,
+};
+
+function formatoFechaCorta(fechaIso: string) {
+  const [, mes, dia] = fechaIso.split('-');
+  return `${dia}/${mes}`;
+}
 
 export default function InventarioScreen() {
   const { items, loading, error, ajustarCantidad, refetch } = useInventario();
   const { categorias } = useCategorias();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= DESKTOP_BREAKPOINT;
+
   const [modalVisible, setModalVisible] = useState(false);
   const [modalTicketVisible, setModalTicketVisible] = useState(false);
   const [detalleItem, setDetalleItem] = useState<InventarioItem | null>(null);
-  // Efímero, sin persistir: son 3 categorías hoy, re-expandir cuesta un
+  // Efímero, sin persistir: son pocas categorías, re-expandir cuesta un
   // tap y persistir agregaría un read async al montar para poco beneficio.
   const [colapsadas, setColapsadas] = useState<Set<string>>(new Set());
 
   const secciones = useMemo(() => {
     return categorias
-      .map((cat) => {
-        const itemsCategoria = items.filter((it) => it.producto?.categoria_id === cat.id);
-        return {
-          id: cat.id,
-          title: `${cat.icono} ${cat.nombre}`,
-          count: itemsCategoria.length,
-          // SectionList no tiene collapse nativo: se mantiene la sección
-          // (con su header) en el array y se le pasa data: [] cuando está
-          // colapsada, así el header sigue visible pero sin ítems debajo.
-          data: colapsadas.has(cat.id) ? [] : itemsCategoria,
-        };
-      })
-      .filter((sec) => sec.count > 0);
-  }, [items, categorias, colapsadas]);
+      .map((cat) => ({
+        id: cat.id,
+        icono: cat.icono,
+        nombre: cat.nombre,
+        items: items.filter((it) => it.producto?.categoria_id === cat.id),
+      }))
+      .filter((sec) => sec.items.length > 0);
+  }, [items, categorias]);
+
+  const resumen = useMemo(() => {
+    let rojo = 0;
+    let amarillo = 0;
+    let verde = 0;
+    for (const item of items) {
+      if (item.estado_stock === 'rojo') rojo++;
+      else if (item.estado_stock === 'amarillo') amarillo++;
+      else verde++;
+    }
+    return { rojo, amarillo, verde };
+  }, [items]);
 
   const toggleColapsada = (categoriaId: string) => {
     setColapsadas((prev) => {
@@ -65,54 +93,91 @@ export default function InventarioScreen() {
     });
   };
 
+  const contenido = loading ? (
+    <View style={styles.centered}>
+      <ActivityIndicator size="large" />
+    </View>
+  ) : error ? (
+    <View style={styles.centered}>
+      <Text style={styles.errorText}>No se pudo cargar el inventario: {error}</Text>
+    </View>
+  ) : items.length === 0 ? (
+    <View style={styles.centered}>
+      <Text style={styles.mensajeVacio}>Todavía no cargaste productos. Usá el botón + para empezar.</Text>
+    </View>
+  ) : (
+    <View style={isDesktop ? styles.listaDesktop : styles.listaMobile}>
+      {secciones.map((sec) => (
+        <SeccionCard
+          key={sec.id}
+          icono={sec.icono}
+          nombre={sec.nombre}
+          items={sec.items}
+          colapsada={colapsadas.has(sec.id)}
+          onToggle={() => toggleColapsada(sec.id)}
+          onAjustar={ajustarCantidad}
+          onDetalle={setDetalleItem}
+          columnas={isDesktop ? 2 : 1}
+        />
+      ))}
+    </View>
+  );
+
   return (
-    <View style={styles.container}>
-      {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" />
-        </View>
-      ) : error ? (
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>No se pudo cargar el inventario: {error}</Text>
-        </View>
-      ) : items.length === 0 ? (
-        <View style={styles.centered}>
-          <Text>Todavía no cargaste productos. Usá el botón + para empezar.</Text>
+    <View style={[styles.container, isDesktop && styles.containerDesktop]}>
+      {isDesktop ? (
+        <View style={styles.desktopWrap}>
+          <View style={styles.desktopHeader}>
+            <View>
+              <Text style={styles.desktopTitulo}>Tu inventario</Text>
+              <Text style={styles.desktopSubtitulo}>
+                {items.length} {items.length === 1 ? 'producto' : 'productos'} en {secciones.length}{' '}
+                {secciones.length === 1 ? 'categoría' : 'categorías'}
+              </Text>
+            </View>
+            <View style={styles.desktopBotones}>
+              <PressableFeedback
+                style={styles.botonSecundario}
+                onPress={() => setModalTicketVisible(true)}
+              >
+                <Camera size={17} color={Colors.primary} strokeWidth={2.75} />
+                <Text style={styles.botonSecundarioTexto}>Escanear ticket</Text>
+              </PressableFeedback>
+              <PressableFeedback style={styles.botonPrimario} onPress={() => setModalVisible(true)}>
+                <Plus size={17} color={Colors.white} strokeWidth={2.75} />
+                <Text style={styles.botonPrimarioTexto}>Agregar producto</Text>
+              </PressableFeedback>
+            </View>
+          </View>
+
+          <View style={styles.desktopGrid}>
+            <View style={styles.desktopColumna}>{contenido}</View>
+            <RailDerecho items={items} />
+          </View>
         </View>
       ) : (
-        <SectionList
-          sections={secciones}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          renderSectionHeader={({ section }) => (
-            <SeccionHeader
-              titulo={section.title}
-              cantidad={section.count}
-              colapsada={colapsadas.has(section.id)}
-              onToggle={() => toggleColapsada(section.id)}
-            />
-          )}
-          renderItem={({ item }) => (
-            <ItemInventario item={item} onAjustar={ajustarCantidad} onDetalle={setDetalleItem} />
-          )}
-        />
+        <>
+          <HeaderMobile />
+          {!loading && !error && items.length > 0 && <ChipsResumen resumen={resumen} />}
+          {contenido}
+
+          <PressableFeedback
+            style={styles.fabTicket}
+            onPress={() => setModalTicketVisible(true)}
+            accessibilityLabel="Escanear ticket"
+          >
+            <Camera size={20} color={Colors.primary} strokeWidth={2.75} />
+          </PressableFeedback>
+
+          <PressableFeedback
+            style={styles.fab}
+            onPress={() => setModalVisible(true)}
+            accessibilityLabel="Agregar producto"
+          >
+            <Plus size={26} color={Colors.white} strokeWidth={2.75} />
+          </PressableFeedback>
+        </>
       )}
-
-      <PressableFeedback
-        style={styles.fabTicket}
-        onPress={() => setModalTicketVisible(true)}
-        accessibilityLabel="Escanear ticket"
-      >
-        <Text style={styles.fabTicketTexto}>📷</Text>
-      </PressableFeedback>
-
-      <PressableFeedback
-        style={styles.fab}
-        onPress={() => setModalVisible(true)}
-        accessibilityLabel="Agregar producto"
-      >
-        <Text style={styles.fabTexto}>+</Text>
-      </PressableFeedback>
 
       <AgregarProductoModal
         visible={modalVisible}
@@ -136,19 +201,70 @@ export default function InventarioScreen() {
   );
 }
 
-// Componente propio (no una función inline en renderSectionHeader) porque
-// necesita su propio useSharedValue por sección — un render-prop plano no
-// puede usar hooks de forma consistente entre renders.
-function SeccionHeader({
-  titulo,
-  cantidad,
+function HeaderMobile() {
+  return (
+    <View style={styles.headerMobile}>
+      <View style={styles.headerMobileTextos}>
+        <Text style={styles.kicker}>Tu alacena</Text>
+        <Text style={styles.tituloMobile}>Inventario</Text>
+      </View>
+      <Avatar />
+    </View>
+  );
+}
+
+function Avatar() {
+  // Sin campo de nombre en el perfil (solo email) — inicial simple en vez
+  // de inventar dos iniciales que no existen.
+  const { session } = useAuth();
+  const inicial = session?.user.email?.[0]?.toUpperCase() ?? '?';
+  return (
+    <View style={styles.avatar}>
+      <Text style={styles.avatarTexto}>{inicial}</Text>
+    </View>
+  );
+}
+
+function ChipsResumen({ resumen }: { resumen: { rojo: number; amarillo: number; verde: number } }) {
+  return (
+    <View style={styles.chipsResumen}>
+      <Chip color={Colors.error} tint={Colors.errorTint} texto={`${resumen.rojo} para reponer`} />
+      <Chip color={Colors.warning} tint={Colors.warningTint} texto={`${resumen.amarillo} justos`} />
+      <Chip color={Colors.success} tint={Colors.successTint} texto={`${resumen.verde} ok`} />
+    </View>
+  );
+}
+
+function Chip({ color, tint, texto }: { color: string; tint: string; texto: string }) {
+  return (
+    <View style={[styles.chip, { backgroundColor: tint }]}>
+      <View style={[styles.chipDot, { backgroundColor: color }]} />
+      <Text style={[styles.chipTexto, { color }]}>{texto}</Text>
+    </View>
+  );
+}
+
+// Componente propio (no una función inline en el render) porque necesita
+// su propio useSharedValue por sección — un render-prop plano no puede
+// usar hooks de forma consistente entre renders.
+function SeccionCard({
+  icono,
+  nombre,
+  items,
   colapsada,
   onToggle,
+  onAjustar,
+  onDetalle,
+  columnas,
 }: {
-  titulo: string;
-  cantidad: number;
+  icono: string;
+  nombre: string;
+  items: InventarioItem[];
   colapsada: boolean;
   onToggle: () => void;
+  onAjustar: (id: string, delta: number) => void;
+  onDetalle: (item: InventarioItem) => void;
+  columnas: 1 | 2;
 }) {
   const rotacion = useSharedValue(colapsada ? -90 : 0);
 
@@ -161,12 +277,34 @@ function SeccionHeader({
   }));
 
   return (
-    <PressableFeedback style={styles.sectionHeader} onPress={onToggle}>
-      <Text style={styles.sectionHeaderTexto}>
-        {titulo} ({cantidad})
-      </Text>
-      <Animated.Text style={[styles.sectionHeaderChevron, estiloChevron]}>▾</Animated.Text>
-    </PressableFeedback>
+    <View style={styles.card}>
+      <PressableFeedback style={styles.sectionHeader} onPress={onToggle}>
+        <View style={styles.sectionHeaderIcono}>
+          <Text style={styles.sectionHeaderEmoji}>{icono}</Text>
+        </View>
+        <Text style={styles.sectionHeaderTexto}>{nombre}</Text>
+        <View style={styles.sectionHeaderBadge}>
+          <Text style={styles.sectionHeaderBadgeTexto}>{items.length}</Text>
+        </View>
+        <Animated.View style={estiloChevron}>
+          <ChevronDown size={17} color={Colors.textSecondary} strokeWidth={2.75} />
+        </Animated.View>
+      </PressableFeedback>
+
+      {!colapsada && (
+        <View style={[styles.sectionItems, columnas === 2 && styles.sectionItemsGrid]}>
+          {items.map((item) => (
+            <ItemInventario
+              key={item.id}
+              item={item}
+              onAjustar={onAjustar}
+              onDetalle={onDetalle}
+              ancho={columnas === 2 ? '48%' : '100%'}
+            />
+          ))}
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -174,42 +312,50 @@ function ItemInventario({
   item,
   onAjustar,
   onDetalle,
+  ancho,
 }: {
   item: InventarioItem;
   onAjustar: (id: string, delta: number) => void;
   onDetalle: (item: InventarioItem) => void;
+  ancho: '48%' | '100%';
 }) {
   return (
     <Animated.View
       entering={FadeIn.duration(150)}
       exiting={FadeOut.duration(150)}
       layout={LinearTransition.duration(200)}
+      style={{ width: ancho }}
     >
-      <PressableFeedback style={styles.card} onPress={() => onDetalle(item)}>
-        <View style={[styles.semaforoDot, { backgroundColor: COLOR_SEMAFORO[item.estado_stock] }]} />
+      <PressableFeedback style={styles.fila} onPress={() => onDetalle(item)}>
+        <View style={[styles.semaforoHalo, { backgroundColor: TINT_SEMAFORO[item.estado_stock] }]}>
+          <View style={[styles.semaforoDot, { backgroundColor: COLOR_SEMAFORO[item.estado_stock] }]} />
+        </View>
 
         <View style={styles.info}>
-          <Text style={styles.nombre}>{item.producto?.nombre}</Text>
-          <Text style={styles.cantidad}>
+          <Text style={styles.nombre} numberOfLines={1}>
+            {item.producto?.nombre}
+          </Text>
+          <Text style={styles.cantidadMeta} numberOfLines={1}>
             {item.cantidad_actual} {item.unidad_medida}
-            {item.fecha_vencimiento ? ` · vence ${item.fecha_vencimiento}` : ''}
+            {item.fecha_vencimiento ? ` · vence ${formatoFechaCorta(item.fecha_vencimiento)}` : ''}
           </Text>
         </View>
 
-        <View style={styles.controles}>
+        <View style={styles.stepper}>
           <PressableFeedback
-            style={styles.botonControl}
+            style={({ pressed }) => [styles.stepperBoton, pressed && styles.stepperBotonPressed]}
             onPress={() => onAjustar(item.id, -1)}
             accessibilityLabel={`Restar unidad a ${item.producto?.nombre}`}
           >
-            <Text style={styles.botonTexto}>−</Text>
+            <Minus size={14} color={Colors.textPrimary} strokeWidth={2.75} />
           </PressableFeedback>
+          <Text style={styles.stepperCantidad}>{item.cantidad_actual}</Text>
           <PressableFeedback
-            style={styles.botonControl}
+            style={({ pressed }) => [styles.stepperBoton, pressed && styles.stepperBotonPressed]}
             onPress={() => onAjustar(item.id, 1)}
             accessibilityLabel={`Sumar unidad a ${item.producto?.nombre}`}
           >
-            <Text style={styles.botonTexto}>+</Text>
+            <Plus size={14} color={Colors.textPrimary} strokeWidth={2.75} />
           </PressableFeedback>
         </View>
       </PressableFeedback>
@@ -217,89 +363,323 @@ function ItemInventario({
   );
 }
 
+// Rail derecho de escritorio (artboard 1k): "para reponer" + botón para
+// generar la lista de compras (mismo RPC que src/app/modo-supermercado.tsx),
+// gasto del mes (mismo gráfico que Historial) y alertas de precio — todo
+// con datos que ya vienen de hooks existentes, sin backend nuevo.
+function RailDerecho({ items }: { items: InventarioItem[] }) {
+  const router = useRouter();
+  const { gastoMensual, tendencias } = useDashboardAhorro();
+  const [generando, setGenerando] = useState(false);
+  const [errorGenerar, setErrorGenerar] = useState<string | null>(null);
+
+  const paraReponer = items.filter((it) => it.estado_stock !== 'verde').slice(0, 6);
+
+  const generarLista = async () => {
+    setGenerando(true);
+    setErrorGenerar(null);
+    const { data: listaId, error } = await supabase.rpc('fn_generar_lista_compra');
+    setGenerando(false);
+
+    if (error || !listaId) {
+      setErrorGenerar(error?.message ?? 'No se pudo generar la lista.');
+      return;
+    }
+    router.push('/modo-supermercado');
+  };
+
+  return (
+    <View style={styles.rail}>
+      <View style={styles.railCardOscura}>
+        <Text style={styles.railTituloOscuro}>Para reponer</Text>
+        {paraReponer.length === 0 ? (
+          <Text style={styles.railVacio}>Todo en orden por ahora.</Text>
+        ) : (
+          paraReponer.map((item) => (
+            <View key={item.id} style={styles.railFilaReponer}>
+              <View style={[styles.railDot, { backgroundColor: COLOR_SEMAFORO[item.estado_stock] }]} />
+              <Text style={styles.railFilaReponerTexto} numberOfLines={1}>
+                {item.producto?.nombre}
+              </Text>
+            </View>
+          ))
+        )}
+
+        {errorGenerar && <Text style={styles.railError}>{errorGenerar}</Text>}
+
+        <PressableFeedback
+          style={[styles.botonGenerarLista, generando && styles.botonDisabled]}
+          onPress={generarLista}
+          disabled={generando}
+        >
+          {generando ? (
+            <ActivityIndicator color={Colors.white} />
+          ) : (
+            <Text style={styles.botonGenerarListaTexto}>Generar lista de compras</Text>
+          )}
+        </PressableFeedback>
+      </View>
+
+      {gastoMensual.length > 0 && (
+        <View style={styles.railCard}>
+          <Text style={styles.railTitulo}>Gasto del mes</Text>
+          <GraficoGastoMensual gastoMensual={gastoMensual} />
+        </View>
+      )}
+
+      {tendencias.length > 0 && (
+        <View style={styles.railCard}>
+          <Text style={styles.railTitulo}>Alertas de precio</Text>
+          {tendencias.slice(0, 4).map((t) => {
+            const delta = ((t.precio_actual - t.precio_anterior) / t.precio_anterior) * 100;
+            return (
+              <View key={t.producto_id} style={styles.railFilaAlerta}>
+                <Text style={styles.railFilaAlertaTexto} numberOfLines={1}>
+                  {t.producto_nombre}
+                </Text>
+                <View style={styles.railFilaAlertaDelta}>
+                  {delta > 0 ? (
+                    <TrendingUp size={13} color={Colors.error} strokeWidth={2.75} />
+                  ) : (
+                    <TrendingDown size={13} color={Colors.success} strokeWidth={2.75} />
+                  )}
+                  <Text style={[styles.railFilaAlertaDeltaTexto, { color: delta > 0 ? Colors.error : Colors.success }]}>
+                    {delta > 0 ? '+' : ''}
+                    {delta.toFixed(0)}%
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  listContent: { paddingBottom: 32 },
+  container: { flex: 1, backgroundColor: Colors.background },
+  containerDesktop: { alignItems: 'center' },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  errorText: { color: Colors.error, textAlign: 'center' },
-  sectionHeader: {
+  errorText: { color: Colors.error, textAlign: 'center', fontFamily: Fonts.medium },
+  mensajeVacio: { textAlign: 'center', color: Colors.textSecondary, fontFamily: Fonts.medium, fontSize: 15 },
+
+  // Mobile
+  headerMobile: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    padding: 18,
+    paddingHorizontal: 20,
   },
-  sectionHeaderTexto: {
-    fontSize: 14,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    color: Colors.textSecondary,
+  headerMobileTextos: { gap: 2 },
+  kicker: { fontFamily: Fonts.semibold, fontSize: 12, color: Colors.textSecondary },
+  tituloMobile: { fontFamily: Fonts.bold, fontSize: 21, color: Colors.textPrimary },
+  avatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: Colors.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  sectionHeaderChevron: {
-    fontSize: 13,
-    color: Colors.textSecondary,
+  avatarTexto: { fontFamily: Fonts.bold, fontSize: 14, color: Colors.primary },
+  chipsResumen: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 16, marginBottom: 12 },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 7, paddingHorizontal: 13, borderRadius: 999 },
+  chipDot: { width: 8, height: 8, borderRadius: 4 },
+  chipTexto: { fontFamily: Fonts.bold, fontSize: 12.5 },
+  listaMobile: { paddingHorizontal: 12, paddingBottom: 100 },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 86,
+    width: 58,
+    height: 58,
+    borderRadius: 999,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#c1552c',
+    shadowOpacity: 0.4,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
-  card: {
+  fabTicket: {
+    position: 'absolute',
+    right: 24,
+    bottom: 150,
+    width: 46,
+    height: 46,
+    borderRadius: 999,
+    backgroundColor: Colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#2a1e1a',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+
+  // Desktop
+  desktopWrap: { width: '100%', maxWidth: 1122, padding: 24 },
+  desktopHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  desktopTitulo: { fontFamily: Fonts.bold, fontSize: 24, color: Colors.textPrimary },
+  desktopSubtitulo: { fontFamily: Fonts.medium, fontSize: 13.5, color: Colors.textSecondary, marginTop: 2 },
+  desktopBotones: { flexDirection: 'row', gap: 10 },
+  botonSecundario: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
     backgroundColor: Colors.white,
-    marginHorizontal: 12,
-    marginBottom: 6,
-    padding: 10,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    borderRadius: 999,
+    paddingVertical: 11,
+    paddingHorizontal: 18,
+    shadowColor: '#2a1e1a',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-  semaforoDot: { width: 12, height: 12, borderRadius: 6, marginRight: 12 },
-  info: { flex: 1 },
-  nombre: { fontSize: 16, fontWeight: '600' },
-  cantidad: { fontSize: 13, color: Colors.textSecondary, marginTop: 2 },
-  controles: { flexDirection: 'row', gap: 8 },
-  botonControl: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  botonSecundarioTexto: { fontFamily: Fonts.bold, fontSize: 14, color: Colors.primary },
+  botonPrimario: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.primary,
+    borderRadius: 999,
+    paddingVertical: 11,
+    paddingHorizontal: 18,
+  },
+  botonPrimarioTexto: { fontFamily: Fonts.bold, fontSize: 14, color: Colors.white },
+  desktopGrid: { flexDirection: 'row', gap: 24, alignItems: 'flex-start' },
+  desktopColumna: { flex: 1 },
+  listaDesktop: {},
+
+  // Card de categoría (compartida mobile/desktop)
+  card: {
+    backgroundColor: Colors.white,
+    borderRadius: 20,
+    marginBottom: 12,
+    marginHorizontal: 12,
+    shadowColor: '#2a1e1a',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+  },
+  sectionHeaderIcono: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: Colors.backgroundMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  botonTexto: { fontSize: 18, fontWeight: '700', color: Colors.textPrimary },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  sectionHeaderEmoji: { fontSize: 18 },
+  sectionHeaderTexto: { flex: 1, fontFamily: Fonts.bold, fontSize: 16, color: Colors.textPrimary },
+  sectionHeaderBadge: {
+    backgroundColor: Colors.background,
+    borderRadius: 999,
+    paddingVertical: 3,
+    paddingHorizontal: 9,
+  },
+  sectionHeaderBadgeTexto: { fontFamily: Fonts.bold, fontSize: 12, color: Colors.textSecondary },
+  sectionItems: { paddingHorizontal: 8, paddingBottom: 8, gap: 2 },
+  sectionItemsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 2 },
+
+  fila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderRadius: 14,
+    gap: 10,
+  },
+  semaforoHalo: {
+    width: 19,
+    height: 19,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  semaforoDot: { width: 11, height: 11, borderRadius: 999 },
+  info: { flex: 1 },
+  nombre: { fontFamily: Fonts.semibold, fontSize: 15.5, color: Colors.textPrimary },
+  cantidadMeta: { fontFamily: Fonts.medium, fontSize: 12.5, color: Colors.textSecondary, marginTop: 1 },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.backgroundMuted,
+    borderRadius: 999,
+    padding: 3,
+  },
+  stepperBoton: {
+    width: 30,
+    height: 30,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperBotonPressed: { backgroundColor: '#dfc6a8' },
+  stepperCantidad: { fontFamily: Fonts.bold, fontSize: 14.5, color: Colors.textPrimary, minWidth: 26, textAlign: 'center' },
+
+  // Rail derecho de escritorio
+  rail: { width: 320, gap: 16 },
+  railCardOscura: {
+    backgroundColor: '#2a1e1a',
+    borderRadius: 22,
+    padding: 18,
+    gap: 8,
+  },
+  railTituloOscuro: {
+    fontFamily: Fonts.bold,
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    color: '#cbb5a5',
+    marginBottom: 4,
+  },
+  railVacio: { fontFamily: Fonts.medium, fontSize: 13, color: '#cbb5a5' },
+  railFilaReponer: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
+  railDot: { width: 7, height: 7, borderRadius: 999 },
+  railFilaReponerTexto: { flex: 1, fontFamily: Fonts.semibold, fontSize: 14, color: Colors.white },
+  railError: { color: Colors.error, fontFamily: Fonts.medium, fontSize: 12, marginTop: 4 },
+  botonGenerarLista: {
     backgroundColor: Colors.primary,
+    borderRadius: 999,
+    paddingVertical: 13,
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    marginTop: 10,
   },
-  fabTexto: { color: Colors.white, fontSize: 28, fontWeight: '600', lineHeight: 30 },
-  fabTicket: {
-    position: 'absolute',
-    right: 20,
-    bottom: 92,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  botonDisabled: { opacity: 0.5 },
+  botonGenerarListaTexto: { fontFamily: Fonts.bold, fontSize: 14, color: Colors.white },
+  railCard: {
     backgroundColor: Colors.white,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    borderRadius: 22,
+    padding: 18,
+    shadowColor: '#2a1e1a',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
     shadowOffset: { width: 0, height: 2 },
-    elevation: 4,
+    elevation: 2,
   },
-  fabTicketTexto: { fontSize: 20 },
+  railTitulo: {
+    fontFamily: Fonts.bold,
+    fontSize: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    color: Colors.textSecondary,
+    marginBottom: 10,
+  },
+  railFilaAlerta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6 },
+  railFilaAlertaTexto: { flex: 1, fontFamily: Fonts.semibold, fontSize: 14, color: Colors.textPrimary, marginRight: 8 },
+  railFilaAlertaDelta: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  railFilaAlertaDeltaTexto: { fontFamily: Fonts.bold, fontSize: 13.5 },
 });
